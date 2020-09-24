@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>GeoTool</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+    <script src="{{ url_for('static', filename='js/script.js') }}" defer></script>
+</head>
+<header>
+    <div><h1>AUTOML FOR GEOCHEMISTRY</h1></div>
+    <div>
+        <nav>
+            <ul class="nav_links">
+                <li><a href="#">Home</a></li>
+                <li><a href="#">Info</a></li>
+            </ul>
+        </nav>
+    </div>
+</header>
+<body>
+    
+    <ul class="tabs">
+        <li data-tab-target="#upload-files" class="active tab">Upload files</li>
+        <li data-tab-target="#apply-imputation" class="tab">Apply imputation</li>
+        <li data-tab-target="#choose-learning" class="tab">Choose the learning method</li>
+    </ul>
+
+    <div class="container">
+        <div class="tab-content">
+            <div id="upload-files" data-tab-content class="active">
+                <div class="titles">Upload files</div>
+                <p class="question">Welcome!</p>
+                <br><p>This tool automates the process of applying machine learning to
+                    geochemical data. You can use it to discriminate data by classes (e.g.
+                    rock classification) or to create clusters (e.g. analysis of geochemical
+                    signatures of different locations). We will be guiding you through the
+                    process!</p>
+                <br><p>First, let´s start by uploading the dataset. The data must meet the
+                    following requirements:</p>
+                <br><p>
+                    <ul>
+                        <li>Be in CSV format</li>
+                        <li>Only numeric data values (oxides must be entered as percentages
+                            and single elements must be entered as parts per million - ppm)</li>
+                        <li>Only named variables in the first row</li>
+                    </ul>
+                </p><button>Upload</button>
+                <!-- Write your comments here 
+                <br><p><form action= "http://localhost:3000/uploader" method= "POST" enctype= "multipart/form-data" class="form">
+                    <div>
+                        <input type= "file" name= "file"/>
+                        <p><button>Upload</button></p>
+                    </div>
+                </form></p>-->
+
+            </div>
+            <div id="apply-imputation" data-tab-content>
+                <div class="titles">Apply imputation</div>
+                <p>Lorem ipsum dolor sit, amet consectetur adipisicing elit. Eum enim velit excepturi ipsum qui vero temporibus neque odit doloribus voluptate, harum dolorum minus suscipit reprehenderit optio et laborum nulla corporis.</p>
+            </div>
+            <div id="choose-learning" data-tab-content>
+                <div class="titles">Choose the learning method</div>
+                <p>Lorem ipsum dolor sit, amet consectetur adipisicing elit. Eum enim velit excepturi ipsum qui vero temporibus neque odit doloribus voluptate, harum dolorum minus suscipit reprehenderit optio et laborum nulla corporis.</p>
+            </div>
+        </div>
+    </div>
+
+    
+
+</body>
+</html>
