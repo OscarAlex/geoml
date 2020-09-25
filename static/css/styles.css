@@ -6,7 +6,8 @@
     background-color: #e7ba57;
 }
 
-/*(shift + reload) para ver los cambios */
+/*(shift + reload) para ver los cambios 
+Rama 2? */
 
 header{
     display: flex;
@@ -52,13 +53,13 @@ p{
     text-align: justify;
 }
 
-[data-tab-content]{
+/*[data-tab-content]{
     display: none;
 }
 
 .active[data-tab-content]{
     display: block;
-}
+}*/
 
 .tabs{
     display: flex;
