@@ -53,13 +53,13 @@ p{
     text-align: justify;
 }
 
-[data-tab-content]{
+/*[data-tab-content]{
     display: none;
 }
 
 .active[data-tab-content]{
     display: block;
-}
+}*/
 
 .tabs{
     display: flex;
