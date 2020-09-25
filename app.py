@@ -1,17 +1,31 @@
-from flask import Flask, render_template, request
+from flask import Flask, render_template, request, redirect, url_for
+from werkzeug.utils import secure_filename
+import pandas as pd
 
 app= Flask(__name__)
 
-#Prueba, esta es la rama 2
-
 @app.route('/')
-def Index():
+def Index():    
     return render_template('index.html')
 
-@app.route('/uploader', methods = ['GET', 'POST'])
-def uploader():
+@app.route('/add_csv', methods=['POST'])
+def Add_CSV():
     if request.method == 'POST':
-        return('archivo subido')
+        #Load file
+        try:
+            fileLoaded= request.files['file']
+            fileLoaded.save(secure_filename(fileLoaded.filename))
+            #Get file
+            fileSaved= fileLoaded.filename
+            data= pd.read_csv(fileSaved)
+            #print(data)
+            return redirect(url_for('Imput'))
+        except:
+            return 'Noooooooooooooooo'
+
+@app.route('/imputation')
+def Imput():
+        return render_template('imputation.html')
 
 
 if __name__ == '__main__':

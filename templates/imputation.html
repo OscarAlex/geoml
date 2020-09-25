@@ -1,0 +1,25 @@
+{% extends 'layout.html' %}
+
+{% block body %}
+
+<ul class="tabs">
+    <li data-tab-target="#upload-files" class="active tab">Upload files</li>
+    <li data-tab-target="#apply-imputation" class="tab">Apply imputation</li>
+    <li data-tab-target="#choose-learning" class="tab">Choose the learning method</li>
+</ul>
+
+<div class="container">
+    <div class="tab-content">
+        <div id="apply-imputation" data-tab-content>
+            <div class="titles">Apply imputation</div>
+            <p class="question">Would you like to apply the Decision Tree Regressor
+                imputation method to all the variables?</p>
+            <br><p>The Decision Tree Regressor method is used for imputing missing
+                values by modeling each feature with missing values as a function
+                of other features. The model reduces the options based on certain
+                conditions that the data satisfy until it is sure to make a prediction.</p>
+        </div>
+    </div>
+</div>
+
+{% endblock %}

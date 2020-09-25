@@ -1,26 +1,7 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta http-equiv="X-UA-Compatible" content="ie=edge">
-    <title>GeoTool</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
-<!--  <script src="{{ url_for('static', filename='js/script.js') }}" defer></script>  -->
-</head>
-<header>
-    <div><h1>AUTOML FOR GEOCHEMISTRY</h1></div>
-    <div>
-        <nav>
-            <ul class="nav_links">
-                <li><a href="#">Home</a></li>
-                <li><a href="#">Info</a></li>
-            </ul>
-        </nav>
-    </div>
-</header>
-<body>
-    
+{% extends 'layout.html' %}
+
+{% block body %}
+
     <ul class="tabs">
         <li data-tab-target="#upload-files" class="active tab">Upload files</li>
         <li data-tab-target="#apply-imputation" class="tab">Apply imputation</li>
@@ -46,60 +27,17 @@
                             and single elements must be entered as parts per million - ppm)</li>
                         <li>Only named variables in the first row</li>
                     </ul>
-                </p><button>Upload</button>
-                <!-- Write your comments here 
-                    Rama 2 para otra opción en el tab
-                <br><p><form action= "http://localhost:3000/uploader" method= "POST" enctype= "multipart/form-data" class="form">
-                    <div>
+                
+                <!-- Write your comments here -->
+                
+                <center>
+                    <br><p><form action= "/add_csv" method= "POST" enctype= "multipart/form-data">
                         <input type= "file" name= "file"/>
-                        <p><button>Upload</button></p>
-                    </div>
-                </form></p>-->
-
-            </div>
-            <div id="apply-imputation" data-tab-content>
-                <div class="titles">Apply imputation</div>
-                <p class="question">Would you like to apply the Decision Tree Regressor
-                    imputation method to all the variables?</p>
-                <br><p>The Decision Tree Regressor method is used for imputing missing
-                    values by modeling each feature with missing values as a function
-                    of other features. The model reduces the options based on certain
-                    conditions that the data satisfy until it is sure to make a prediction.</p>
-            </div>
-            <div id="choose-learning" data-tab-content>
-                <div class="titles">Choose the learning method</div>
-                <div class="question">Which method do you want to use?</div>
-                <div>
-                    <br><table style="width:100%">
-                        <tr>
-                          <th style="padding:10px">Supervised Learning</th>
-                          <th style="padding:10px">Unsupervised learning</th> 
-                        </tr>
-                        <tr>
-                          <td style="padding:0 20px">Data
-                            must be labeled (i.e., belong to
-                            a class). This method is useful
-                            for classifying new samples.</td>
-                          <td style="padding:0 20px">Data
-                            does not need to be labeled.
-                            This method is useful for
-                            finding patterns in clusters.</td>
-                        </tr>
-                        <tr>
-                            <form action="/action_page.php">
-                                <td><br><input type="radio" id="super" name="learning" value="super">
-                                    <label for="super">Supervised</label></td>
-                                <td><br><input type="radio" id="unsuper" name="learning" value="unsuper">
-                                    <label for="unsuper">Unsupervised</label></td>
-                            </form>
-                        </tr>
-                      </table>
-                </div>
+                        <div id="upl"><br><p><button>Upload</button></p>
+                    </form></p>
+                </div></center>
             </div>
         </div>
     </div>
-
-    
-
-</body>
-</html>
+   
+{% endblock %}
