@@ -1,4 +1,4 @@
-const tabs= document.querySelectorAll('[data-tab-target]')
+/*const tabs= document.querySelectorAll('[data-tab-target]')
 const tabContents= document.querySelectorAll('[data-tab-content]')
 //Rama 2 chaval?
 tabs.forEach(tab => {
@@ -13,5 +13,5 @@ tabs.forEach(tab => {
         tab.classList.add('active')
         target.classList.add('active')
     })
-});
+});*/
 

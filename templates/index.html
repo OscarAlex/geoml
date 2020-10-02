@@ -2,10 +2,16 @@
 
 {% block body %}
 
-    <ul class="tabs">
+    <!-- <ul class="tabs">
         <li data-tab-target="#upload-files" class="active tab">Upload files</li>
         <li data-tab-target="#apply-imputation" class="tab">Apply imputation</li>
         <li data-tab-target="#choose-learning" class="tab">Choose the learning method</li>
+    </ul> -->
+
+    <ul class="tabs">
+        <li class="active tab">Upload files</li>
+        <li class="tab">Apply imputation</li>
+        <li class="tab">Choose the learning method</li>
     </ul>
 
     <div class="container">
@@ -29,7 +35,6 @@
                     </ul>
                 
                 <!-- Write your comments here -->
-                
                 <center>
                     <br><p><form action= "/add_csv" method= "POST" enctype= "multipart/form-data">
                         <input type= "file" name= "file"/>

@@ -3,9 +3,9 @@
 {% block body %}
 
 <ul class="tabs">
-    <li data-tab-target="#upload-files" class="active tab">Upload files</li>
-    <li data-tab-target="#apply-imputation" class="tab">Apply imputation</li>
-    <li data-tab-target="#choose-learning" class="tab">Choose the learning method</li>
+    <li class="tab">Upload files</li>
+    <li class="tab">Apply imputation</li>
+    <li class="active tab">Choose the learning method</li>
 </ul>
 
 <div class="container">
@@ -13,30 +13,31 @@
             <div class="titles">Choose the learning method</div>
             <div class="question">Which method do you want to use?</div>
             <div>
-                <br><table style="width:100%">
-                    <tr>
-                      <th style="padding:10px">Supervised Learning</th>
-                      <th style="padding:10px">Unsupervised learning</th> 
-                    </tr>
-                    <tr>
-                      <td style="padding:0 20px">Data
-                        must be labeled (i.e., belong to
-                        a class). This method is useful
-                        for classifying new samples.</td>
-                      <td style="padding:0 20px">Data
-                        does not need to be labeled.
-                        This method is useful for
-                        finding patterns in clusters.</td>
-                    </tr>
-                    <tr>
-                        <form action="/action_page.php">
-                            <td><br><input type="radio" id="super" name="learning" value="super">
-                                <label for="super">Supervised</label></td>
-                            <td><br><input type="radio" id="unsuper" name="learning" value="unsuper">
-                                <label for="unsuper">Unsupervised</label></td>
-                        </form>
-                    </tr>
-                  </table>
+                <br><table>
+                        <tr>
+                            <th>Supervised Learning</th>
+                            <th>Unsupervised learning</th> 
+                        </tr>
+                        <tr>
+                            <td><p>Data
+                                must be labeled (i.e., belong to
+                                a class). This method is useful
+                                for classifying new samples.</p></td>
+                            <td><p>Data
+                                does not need to be labeled.
+                                This method is useful for
+                                finding patterns in clusters.</p></td>
+                        </tr>
+                        <tr>
+                            <form action="/choose_learn" method= "POST">
+                                <td><br><input type="radio" id="super" name="learning" value="sup">
+                                    <label for="super">Supervised</label></td>
+                                <td><br><input type="radio" id="unsuper" name="learning" value="unsup">
+                                    <label for="unsuper">Unsupervised</label></td>
+                        </tr>
+                    </table>
+                    <br><center><div id="upl"><br><p><button>Next</button></p></center>
+                    </form>
             </div>
         </div>
     </div>

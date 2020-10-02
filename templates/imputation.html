@@ -3,14 +3,34 @@
 {% block body %}
 
 <ul class="tabs">
-    <li data-tab-target="#upload-files" class="active tab">Upload files</li>
-    <li data-tab-target="#apply-imputation" class="tab">Apply imputation</li>
-    <li data-tab-target="#choose-learning" class="tab">Choose the learning method</li>
+    <li class="tab">Upload files</li>
+    <li class="active tab">Apply imputation</li>
+    <li class="tab">Choose the learning method</li>
 </ul>
 
 <div class="container">
     <div class="tab-content">
         <div id="apply-imputation" data-tab-content>
+            
+            {% if emptyCols: %}
+                <div class="titles">Warning</div>
+                <p>The system has noticed that the following column(s) in
+                    the dataset have not enough data (less than 10%):</p>
+                <p class="question">{{ emptyCols }}</p>
+                
+                <br><p class="question">What would you like to do?</p>
+                <table>
+                    <tr>
+                        <form action="/add_imput" method= "POST">
+                            <td><br><input type="radio" name="empty" id="keep" value="1">
+                                <label for="keep">Keep them</label></td>
+                            <td><br><input type="radio" name="empty" id="remove" value="0">
+                                <label for="remove">Remove them</label></td>
+                    </tr>
+                </table>
+                <br>
+            {% endif %}
+
             <div class="titles">Apply imputation</div>
             <p class="question">Would you like to apply the Decision Tree Regressor
                 imputation method to all the variables?</p>
@@ -18,6 +38,18 @@
                 values by modeling each feature with missing values as a function
                 of other features. The model reduces the options based on certain
                 conditions that the data satisfy until it is sure to make a prediction.</p>
+            
+            <table>
+                <tr>
+                    <form action="/add_imput" method= "POST">
+                        <td><br><input type="radio" name="imputation" id="apply" value="1">
+                            <label for="apply">Apply</label></td>
+                        <td><br><input type="radio" name="imputation" id="not" value="0">
+                            <label for="not">Not apply</label></td>
+                </tr>
+            </table>
+            <br><center><div id="upl"><br><p><button>Next</button></p></center>
+            </form>
         </div>
     </div>
 </div>
