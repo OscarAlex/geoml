@@ -9,14 +9,57 @@
 </ul>
 
 <div class="container">
-        <div id="choose-learning" data-tab-content>
-            <div class="titles">Select the features</div>
-            <div class="question">Please select the variables for the features to be used to create the clusters:</div>
-            <div>
-                
-            </div>
+    <div id="choose-learning" data-tab-content>
+        <div class="titles">Select the features</div>
+        <p>Cluster analysis is a method of unsupervised learning where the
+            goal is to discover groups in the data; the groups are not known in
+            advance. The K-Means algorithm is used to generate the clusters.</p>
+        <br><p>Principal Component Analysis (PCA) is used for data reduction. It
+            aims to reduce a large number of variables to a (much) smaller
+            number while losing as little information as possible. The principal
+            components (PCs) are the input to the K-Means algorithm. The
+            PCs and the clusters can help you to understand the data
+            behavior.</p>
+        <div class="question">Please select the variables for the features to be used to create the clusters:</div>
+        <div>
+            <center><table id="feats">
+                <!-- Travel through features, step 3 -->
+                {% for i in range(0, features|length, 6): %}
+                <tr>
+                    <!-- if there is an element -->
+                    <td>{% if features[i]: %}
+                        <input type="checkbox" name="features" id={{features[i]}} value={{i}}>
+                        <label for={{features[i]}}>{{features[i]}}</label>
+                    {% endif %}</td>
+                    <td>{% if features[i+1]: %}
+                        <input type="checkbox" name="features" id={{features[i+1]}} value={{i+1}}>
+                        <label for={{features[i+1]}}>{{features[i+1]}}</label>
+                    {% endif %}</td>
+                    <td>{% if features[i+2]: %}
+                        <input type="checkbox" name="features" id={{features[i+2]}} value={{i+2}}>
+                        <label for={{features[i+2]}}>{{features[i+2]}}</label>
+                    {% endif %}</td>
+                </tr>
+                {% if features[i+3]: %}
+                <tr class="even">
+                    <td>{% if features[i+3]: %}
+                        <input type="checkbox" name="features" id={{features[i+3]}} value={{i+3}}>
+                        <label for={{features[i+3]}}>{{features[i+3]}}</label>
+                    {% endif %}</td>
+                    <td>{% if features[i+4]: %}
+                        <input type="checkbox" name="features" id={{features[i+4]}} value={{i+4}}>
+                        <label for={{features[i+4]}}>{{features[i+4]}}</label>
+                    {% endif %}</td>
+                    <td>{% if features[i+5]: %}
+                        <input type="checkbox" name="features" id={{features[i+5]}} value={{i+5}}>
+                        <label for={{features[i+5]}}>{{features[i+5]}}</label>
+                    {% endif %}</td>
+                </tr>
+                {% endif %}
+                {% endfor %}
+            </table></center>
         </div>
-    </div>
+    </div>    
 </div>
 
 {% endblock %}

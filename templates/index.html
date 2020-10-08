@@ -2,47 +2,49 @@
 
 {% block body %}
 
-    <!-- <ul class="tabs">
-        <li data-tab-target="#upload-files" class="active tab">Upload files</li>
-        <li data-tab-target="#apply-imputation" class="tab">Apply imputation</li>
-        <li data-tab-target="#choose-learning" class="tab">Choose the learning method</li>
-    </ul> -->
+<!-- <ul class="tabs">
+    <li data-tab-target="#upload-files" class="active tab">Upload files</li>
+    <li data-tab-target="#apply-imputation" class="tab">Apply imputation</li>
+    <li data-tab-target="#choose-learning" class="tab">Choose the learning method</li>
+</ul> -->
 
-    <ul class="tabs">
-        <li class="active tab">Upload files</li>
-        <li class="tab">Apply imputation</li>
-        <li class="tab">Choose the learning method</li>
-    </ul>
+<ul class="tabs">
+    <li class="active tab">Upload files</li>
+    <li class="tab">Apply imputation</li>
+    <li class="tab">Choose the learning method</li>
+</ul>
 
-    <div class="container">
-        <div class="tab-content">
-            <div id="upload-files" data-tab-content class="active">
-                <div class="titles">Upload files</div>
-                <p class="question">Welcome!</p>
-                <br><p>This tool automates the process of applying machine learning to
-                    geochemical data. You can use it to discriminate data by classes (e.g.
-                    rock classification) or to create clusters (e.g. analysis of geochemical
-                    signatures of different locations). We will be guiding you through the
-                    process!</p>
-                <br><p>First, let´s start by uploading the dataset. The data must meet the
-                    following requirements:</p>
-                <br><p>
-                    <ul>
-                        <li>Be in CSV format</li>
-                        <li>Only numeric data values (oxides must be entered as percentages
-                            and single elements must be entered as parts per million - ppm)</li>
-                        <li>Only named variables in the first row</li>
-                    </ul>
-                
-                <!-- Write your comments here -->
-                <center>
-                    <br><p><form action= "/add_csv" method= "POST" enctype= "multipart/form-data">
-                        <input type= "file" name= "file"/>
-                        <div id="upl"><br><p><button>Upload</button></p>
-                    </form></p>
-                </div></center>
-            </div>
+<div class="container">
+    <div class="tab-content">
+        <div id="upload-files" data-tab-content class="active">
+            <div class="titles">Upload files</div>
+            <p class="question">Welcome!</p>
+            <br><p>This tool automates the process of applying machine learning to
+                geochemical data. You can use it to discriminate data by classes (e.g.
+                rock classification) or to create clusters (e.g. analysis of geochemical
+                signatures of different locations). We will be guiding you through the
+                process!</p>
+            <br><p>First, let´s start by uploading the dataset. The data must meet the
+                following requirements:</p>
+            <br><p>
+                <ul>
+                    <li>Be in CSV format</li>
+                    <li>Only numeric data features (oxides must be entered as percentages
+                        and single elements must be entered as parts per million - ppm)</li>
+                    <li>Only string data values for classes (for classification only)</li>
+                    <li>Every row must belong to a class (for classification only)</li>
+                    <li>Only named variables in the first row</li>
+                </ul>
+            
+            <!-- Write your comments here -->
+            <center>
+                <br><p><form action= "/add_csv" method= "POST" enctype= "multipart/form-data">
+                    <input type= "file" name= "file"/>
+                    <div id="upl"><br><button>Upload</button>
+                </form></p>
+            </div></center>
         </div>
     </div>
+</div>
    
 {% endblock %}

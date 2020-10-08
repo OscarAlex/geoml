@@ -1,6 +1,29 @@
 {% extends 'layout.html' %}
 
 {% block body %}
+<script>
+    function deactivate() {
+    //Get checked class id
+    var clas1= document.querySelector('input[name="class"]:checked').id;
+    //Change first character
+    var feat= "F".concat(clas1.substring(1));
+    //Disable feature checkbox
+    var check= document.getElementById(feat);
+    check.disabled= true;
+    
+    //Get unchecked radios
+    var unchk= document.querySelectorAll('input[name="class"]:not(:checked)');
+    for(var i=0; i < unchk.length; i++){
+        //Change first character of id
+        var featcheck= "F".concat(unchk[i].id.substring(1));
+        //Enable feature if class is unchecked
+        var discheck= document.getElementById(featcheck);
+        discheck.disabled= false;
+        //Unchecked feature if class is checked
+        document.getElementById(feat).checked = false;
+    }
+    }
+</script>
 
 <ul class="tabs">
     <li class="tab">Supervised learning</li>
@@ -13,13 +36,91 @@
 </ul>
 
 <div class="container">
-        <div id="choose-learning" data-tab-content>
-            <div class="titles">Select the variables for
-                the class and the features</div>
-            <div class="question">Please select the variable for the class (dependent variable):</div>
-            <div>
-                
-            </div>
+    <div id="choose-learning" data-tab-content>
+        <div class="titles">Select the variables for
+            the class and the features</div>
+        <div class="question">Please select the variable for the class (dependent variable):</div>
+        <div>
+            <center><table id="feats">
+                <!-- Travel through elements, step 3 -->
+                {% for i in range(0, features|length, 6): %}
+                <tr>
+                    <form action="/add_supfeats" method= "POST">
+                    <!-- if there is an element -->
+                    <!-- C= class -->
+                    <td>{% if features[i]: %}
+                        <input type="radio" name="class" id=C{{features[i]}} value={{i}} onclick="deactivate()">
+                        <label for=C{{features[i]}}>{{features[i]}}</label>
+                    {% endif %}</td>
+                    <td>{% if features[i+1]: %}
+                        <input type="radio" name="class" id=C{{features[i+1]}} value={{i+1}} onclick="deactivate()">
+                        <label for=C{{features[i+1]}}>{{features[i+1]}}</label>
+                    {% endif %}</td>
+                    <td>{% if features[i+2]: %}
+                        <input type="radio" name="class" id=C{{features[i+2]}} value={{i+2}} onclick="deactivate()">
+                        <label for=C{{features[i+2]}}>{{features[i+2]}}</label>
+                    {% endif %}</td>
+                </tr>
+                {% if features[i+3]: %}
+                <tr class="even">
+                    <td>{% if features[i+3]: %}
+                        <input type="radio" name="class" id=C{{features[i+3]}} value={{i+3}} onclick="deactivate()">
+                        <label for=C{{features[i+3]}}>{{features[i+3]}}</label>
+                    {% endif %}</td>
+                    <td>{% if features[i+4]: %}
+                        <input type="radio" name="class" id=C{{features[i+4]}} value={{i+4}} onclick="deactivate()">
+                        <label for=C{{features[i+4]}}>{{features[i+4]}}</label>
+                    {% endif %}</td>
+                    <td>{% if features[i+5]: %}
+                        <input type="radio" name="class" id=C{{features[i+5]}} value={{i+5}} onclick="deactivate()">
+                        <label for=C{{features[i+5]}}>{{features[i+5]}}</label>
+                    {% endif %}</td>
+                </tr>
+                {% endif %}
+                {% endfor %}
+            </table></center>
+        </div>
+        <br><div class="question">Please select the variables for the features (independent variables):</div>
+        <div>
+            <center><table id="feats">
+                <!-- Travel through features, step 3 -->
+                {% for i in range(0, features|length, 6): %}
+                <tr>
+                    <!-- if there is an element -->
+                    <!-- F= feature -->
+                    <td>{% if features[i]: %}
+                        <input type="checkbox" name="features" id=F{{features[i]}} value={{i}}>
+                        <label for=F{{features[i]}}>{{features[i]}}</label>
+                    {% endif %}</td>
+                    <td>{% if features[i+1]: %}
+                        <input type="checkbox" name="features" id=F{{features[i+1]}} value={{i+1}}>
+                        <label for=F{{features[i+1]}}>{{features[i+1]}}</label>
+                    {% endif %}</td>
+                    <td>{% if features[i+2]: %}
+                        <input type="checkbox" name="features" id=F{{features[i+2]}} value={{i+2}}>
+                        <label for=F{{features[i+2]}}>{{features[i+2]}}</label>
+                    {% endif %}</td>
+                </tr>
+                {% if features[i+3]: %}
+                <tr class="even">
+                    <td>{% if features[i+3]: %}
+                        <input type="checkbox" name="features" id=F{{features[i+3]}} value={{i+3}}>
+                        <label for=F{{features[i+3]}}>{{features[i+3]}}</label>
+                    {% endif %}</td>
+                    <td>{% if features[i+4]: %}
+                        <input type="checkbox" name="features" id=F{{features[i+4]}} value={{i+4}}>
+                        <label for=F{{features[i+4]}}>{{features[i+4]}}</label>
+                    {% endif %}</td>
+                    <td>{% if features[i+5]: %}
+                        <input type="checkbox" name="features" id=F{{features[i+5]}} value={{i+5}}>
+                        <label for=F{{features[i+5]}}>{{features[i+5]}}</label>
+                    {% endif %}</td>
+                </tr>
+                {% endif %}
+                {% endfor %}
+            </table>
+            <br><div id="upl"><br><button>Next</button></center>
+            </form>
         </div>
     </div>
 </div>

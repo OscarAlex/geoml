@@ -32,23 +32,24 @@
             {% endif %}
 
             <div class="titles">Apply imputation</div>
-            <p class="question">Would you like to apply the Decision Tree Regressor
+            <p class="question">Would you like to apply the Extra Trees Regressor
                 imputation method to all the variables?</p>
-            <br><p>The Decision Tree Regressor method is used for imputing missing
-                values by modeling each feature with missing values as a function
-                of other features. The model reduces the options based on certain
-                conditions that the data satisfy until it is sure to make a prediction.</p>
+            <br><p>Extremly Randomized Trees (Extra Trees Regressor for short) is an
+                ensemble algorithm of decision trees. Predictions are made by averaging
+                the prediction of the decision trees or by using majority vote, depending 
+                the case. It can achieve a very good performance due to its simple 
+                algorithm to construct the decision trees.</p>
             
             <table>
                 <tr>
                     <form action="/add_imput" method= "POST">
-                        <td><br><input type="radio" name="imputation" id="apply" value="1">
-                            <label for="apply">Apply</label></td>
-                        <td><br><input type="radio" name="imputation" id="not" value="0">
-                            <label for="not">Not apply</label></td>
+                    <td><br><input type="radio" name="imputation" id="apply" value="1">
+                        <label for="apply">Apply</label></td>
+                    <td><br><input type="radio" name="imputation" id="not" value="0">
+                        <label for="not">Not apply</label></td>
                 </tr>
             </table>
-            <br><center><div id="upl"><br><p><button>Next</button></p></center>
+            <br><center><div id="upl"><br><button>Next</button></center>
             </form>
         </div>
     </div>

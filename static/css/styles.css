@@ -77,7 +77,7 @@ p{
 
 .tab{
     cursor: default;
-    padding: 12px 20px;
+    padding: 12px .5vw;
     background-color: rgba(196, 105, 45, 0.507);
 }
 
@@ -86,7 +86,7 @@ p{
 }
 
 .tab.active{
-    background-color: rgb(245, 88, 40);
+    background-color: rgb(180, 88, 60);
     cursor: pointer;
 }
 
@@ -121,5 +121,26 @@ table th{
 }
 
 table td{
-    padding: 0 20px;
+    padding: 10px 20px;
+}
+
+table#feats{
+    width: 85vw;
+    text-align: left;
+    padding: 20px;
+    /*border-collapse:collapse*/
+}
+
+.even td{
+    background:  rgba(196, 105, 45, 0.507);
+    width: 33%;
+}
+
+.even label{
+    background:  rgba(196, 105, 45, 0);
+}
+
+td input{
+    height: 15px;
+    width: 15px;
 }
