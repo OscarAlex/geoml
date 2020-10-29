@@ -1,0 +1,33 @@
+{% extends 'layout.html' %}
+
+{% block body %}
+
+<ul class="tabs">
+    <li class="pass tab">Supervised learning</li>
+    <li class="pass tab">1. Select the variables</li>
+    <li class="pass tab">2. Balance the data</li>
+    <li class="pass tab">3. Split the data</li>
+    <li class="pass tab">4. Classification report</li>
+    <li class="pass tab">5. Classify new samples</li>
+    <li class="active tab">6. Classification results</li>
+</ul>
+
+<div class="container">
+    <div id="choose-learning" data-tab-content>
+        <div class="titles">Classification results</div>
+    
+        <p>The following table shows the classification results per sample (see the
+            last column). You can also download the CSV file with the classifications.</p>
+        
+        <br><div class="row">
+            {% for tab in table %}
+                {{ tab|safe }}
+            {% endfor %}
+        </div>
+        <form action="/add_results" method= "GET">
+            <center><div id="upl"><br><button>Download CSV</button></div></center>
+        </form>
+    </div>
+</div>
+
+{% endblock %}

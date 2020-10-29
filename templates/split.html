@@ -1,11 +1,18 @@
 {% extends 'layout.html' %}
 
 {% block body %}
+<script>
+function testing(){
+    var tr_percent = document.getElementById('train');
+    var tr = tr_percent.options[tr_percent.selectedIndex].value;
+    console.log(tr)
+}
+</script>
 
 <ul class="tabs">
-    <li class="tab">Supervised learning</li>
-    <li class="tab">1. Select the variables</li>
-    <li class="tab">2. Balance the data</li>
+    <li class="pass tab">Supervised learning</li>
+    <li class="pass tab">1. Select the variables</li>
+    <li class="pass tab">2. Balance the data</li>
     <li class="active tab">3. Split the data</li>
     <li class="tab">4. Classification report</li>
     <li class="tab">5. Classify new samples</li>
@@ -14,9 +21,37 @@
 
 <div class="container">
     <div id="choose-learning" data-tab-content>
-        <div class="titles">Select the features</div>
-    
-    
+        <div class="titles">Split the data</div>
+        <p>Select the percentage to be used in the training set:</p>
+
+        <br><table class="options">
+            <tr>
+                <td><b>Training percentage</b></td>
+                <td><b>Testing percentage</b></td>
+            </tr>
+            <tr>
+                <form action="/add_split" method= "POST">
+                <td><!-- <label for="train">Select:</label> -->
+                    <select id="train" name="train" onclick="testing()">
+                      <option value="70">70</option>
+                      <option value="75">75</option>
+                      <option value="80">80</option>
+                    </select></td>
+                <td id="tes">30<script>
+                    function testing(){
+                    var tr_percent = document.getElementById('train');
+                    var tr = tr_percent.options[tr_percent.selectedIndex].value;
+                    console.log(tr)
+                    document.getElementById('tes').innerHTML= 100-tr
+                    }
+                </script></td>
+            </tr>
+        </table>
+        <br><center><div id="upl"><br><button onclick="$('#parent-load').show();">Train and evaluate</button></center>
+        </form>
+        <div id="parent-load" style="display:none;">
+            <div id="loading"><img src="../static/img/loading-3.gif" alt="Loading" width="70%" height="70%" /></div>
+        </div>
     </div>
 </div>
 

@@ -4,20 +4,60 @@
 
 <ul class="tabs">
     <li class="tab">Supervised learning</li>
-    <li class="tab">1. Select the variables</li>
-    <li class="active tab">2. Balance the data</li>
-    <li class="tab">3. Split the data</li>
-    <li class="tab">4. Classification report</li>
-    <li class="tab">5. Classify new samples</li>
-    <li class="tab">6. Classification results</li>
+    <li class="pass tab" id="supfeatures" onclick="sure(this.id)">1. Select the variables</li>
+    <li class="active tab" id="balance">2. Balance the data</li>
+    <li class="tab" id="split">3. Split the data</li>
+    <li class="tab" id="report">4. Classification report</li>
+    <li class="tab" id="classify">5. Classify new samples</li>
+    <li class="tab" id="supresults">6. Classification results</li>
 </ul>
 
 <div class="container">
     <div id="choose-learning" data-tab-content>
         <div class="titles">Balance the data</div>
 
-        <br><p class="question">Samples per class</p>
-    
+        <p class="question">Please select the classes you want to 
+                            train the model with:</p>
+        
+        <br><center><table>
+            <tr>
+                <td><b>Class</b></td>
+                <td><b>Samples</b></td>
+                <!-- <td><b>Percent</b></td> -->
+            </tr>
+            {% for sample, i in samples: %}
+            <tr>
+                <form action="/add_balance" method= "POST">
+                <td><input type="checkbox" name="classes" id={{sample[0]}} value={{i}}>
+                    <label for={{sample[0]}}>{{ sample[0] }}</label></td>
+                <td>{{ sample[1] }}</td>
+                <!-- <td>{{ sample[2] }}</td> -->
+            </tr>
+            {% endfor %}
+        </table></center>
+        
+        <br><p class="question">Would you like to apply upsampling?</p>
+        <p>Upsampling is the process of randomly duplicating
+            samples from the minority class to make it equal
+            size as the majority class in order to prevent the
+            majority class from dominating the algorithm.</p>
+        <br><p>If you apply it, consider having selected classes with  
+            a good amount of samples proportional to the total of 
+            samples.</p>
+        
+            <table class="options">
+                <tr>
+                    <td><br><input type="radio" name="balance" id="apply" value="1">
+                        <label for="apply">Apply</label></td>
+                    <td><br><input type="radio" name="balance" id="not" value="0">
+                        <label for="not">Not apply</label></td>
+                </tr>
+            </table>
+            <br><center><div id="upl"><br><button onclick="$('#parent-load').show();">Next</button></center>
+            </form>
+            <div id="parent-load" style="display:none;">
+                <div id="loading"><img src="../static/img/loading-3.gif" alt="Loading" width="70%" height="70%" /></div>
+            </div>
     </div>
 </div>
 

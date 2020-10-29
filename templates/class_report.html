@@ -1,0 +1,245 @@
+{% extends 'layout.html' %}
+
+{% block body %}
+
+<ul class="tabs">
+    <li class="pass tab">Supervised learning</li>
+    <li class="pass tab">1. Select the variables</li>
+    <li class="pass tab">2. Balance the data</li>
+    <li class="pass tab">3. Split the data</li>
+    <li class="active tab">4. Classification report</li>
+    <li class="tab">5. Classify new samples</li>
+    <li class="tab">6. Classification results</li>
+</ul>
+
+<div class="container">
+    <div id="choose-learning" data-tab-content>
+        <div class="titles">Classification report</div>
+
+        <p class="question">Metrics definition</p>
+        <br><p>The following metrics are evaluated for each model:</p>
+        <p><b>Accuracy: </b>Percentage of total samples classified correctly.</p>
+        <p><b>Precision: </b>Percentage of samples correctly identified as positive
+            out of total samples identified as positive.</p>
+        <p><b>Recall: </b>Percentage of samples correctly identified as positive out
+            of total true positives.</p>
+        <p><b>F1-Score: </b>Harmonic mean of precision and recall.</p>
+        <p><b>Support: </b>Number of samples per class.</p>
+        <p><b>Feature importance: </b>Percentage of how much the model
+            performance decreases when a feature is not available. The Eli5
+            method was used to calculate the feature importance for the
+            Random Forest and the Decision Trees algorithms. A feature is
+            important if shuffling its values increases the model error.</p>
+        
+        <!-- Best model -->
+        <br><p class="question">Best model: {{ accs[0][0] }}</p>
+        
+        <!-- {{ accs[0][0] }} = Name of the classifier
+             {{ '%0.2f'|format(accs[0][1])|float }} = Accuracy of the classifier -->
+        <br><center>{{ accs[0][0] }} Accuracy: {{ '%0.2f'|format(accs[0][1])|float }}
+        <table>
+            <tr>
+                <td></td>
+                <!-- Titles -->
+                <td><b>Precision</b></td>
+                <td><b>Recall</b></td>
+                <td><b>F1 Score</b></td>
+                <td><b>Support</b></td>
+            </tr>
+            {% for met in mets.get(accs[0][0]): %}
+            <tr>
+                <!-- Columns -->
+                <td>{{ met }}</td>
+                <td>{{ '%0.2f'| format(mets.get(accs[0][0]).get(met).get('precision') |float) }}</td>
+                <td>{{ '%0.2f'| format(mets.get(accs[0][0]).get(met).get('recall') |float) }}</td>
+                <td>{{ '%0.2f'| format(mets.get(accs[0][0]).get(met).get('f1-score') |float) }}</td>
+                <td>{{ mets.get(accs[0][0]).get(met).get('support') }}</td>
+            </tr>
+            {% endfor %}
+            <tr>
+                <td colspan="5">{{ accs[0][0] }} : {{ defs.get(accs[0][0]) }}</td>
+            </tr>
+        </table>
+        
+        <!--  -->
+        <br><br>Now you can use this model to classify new samples!
+        <form action="/add_report" method= "POST">
+            <div id="upl"><br><button>Classify</button></div>
+        </form>
+        <br><hr style="height:2px;border-width:0;color:black;background-color:black">
+        
+        <br>The evaluation results of the other classification models are as follows:</center>
+        
+        <!-- Tables -->
+        <div class="row">
+            <div class="col-1">
+                <br><center>{{ accs[1][0] }} Accuracy: {{ '%0.2f'|format(accs[1][1])|float }}
+                    <table>
+                        <tr>
+                            <td></td>
+                            <!-- Titles -->
+                            <td><b>Precision</b></td>
+                            <td><b>Recall</b></td>
+                            <td><b>F1 Score</b></td>
+                            <td><b>Support</b></td>
+                        </tr>
+                        {% for met in mets.get(accs[1][0]): %}
+                        <tr>
+                            <!-- Columns -->
+                            <td>{{ met }}</td>
+                            <td>{{ '%0.2f'| format(mets.get(accs[1][0]).get(met).get('precision') |float) }}</td>
+                            <td>{{ '%0.2f'| format(mets.get(accs[1][0]).get(met).get('recall') |float) }}</td>
+                            <td>{{ '%0.2f'| format(mets.get(accs[1][0]).get(met).get('f1-score') |float) }}</td>
+                            <td>{{ mets.get(accs[1][0]).get(met).get('support') }}</td>
+                        </tr>
+                        {% endfor %}
+                        <tr>
+                            <td colspan="5">{{ accs[1][0] }} : {{ defs.get(accs[1][0]) }}</td>
+                        </tr>
+                    </table></center>
+            </div>
+
+            <div class="col-2">
+                <br><center>{{ accs[2][0] }} Accuracy: {{ '%0.2f'|format(accs[2][1])|float }}
+                    <table>
+                        <tr>
+                            <td></td>
+                            <!-- Titles -->
+                            <td><b>Precision</b></td>
+                            <td><b>Recall</b></td>
+                            <td><b>F1 Score</b></td>
+                            <td><b>Support</b></td>
+                        </tr>
+                        {% for met in mets.get(accs[2][0]): %}
+                        <tr>
+                            <!-- Columns -->
+                            <td>{{ met }}</td>
+                            <td>{{ '%0.2f'| format(mets.get(accs[2][0]).get(met).get('precision') |float) }}</td>
+                            <td>{{ '%0.2f'| format(mets.get(accs[2][0]).get(met).get('recall') |float) }}</td>
+                            <td>{{ '%0.2f'| format(mets.get(accs[2][0]).get(met).get('f1-score') |float) }}</td>
+                            <td>{{ mets.get(accs[2][0]).get(met).get('support') }}</td>
+                        </tr>
+                        {% endfor %}
+                        <tr>
+                            <td colspan="5">{{ accs[2][0] }} : {{ defs.get(accs[2][0]) }}</td>
+                        </tr>
+                    </table></center>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-1">
+                <br><center>{{ accs[3][0] }} Accuracy: {{ '%0.2f'|format(accs[3][1])|float }}
+                    <table>
+                        <tr>
+                            <td></td>
+                            <!-- Titles -->
+                            <td><b>Precision</b></td>
+                            <td><b>Recall</b></td>
+                            <td><b>F1 Score</b></td>
+                            <td><b>Support</b></td>
+                        </tr>
+                        {% for met in mets.get(accs[3][0]): %}
+                        <tr>
+                            <!-- Columns -->
+                            <td>{{ met }}</td>
+                            <td>{{ '%0.2f'| format(mets.get(accs[3][0]).get(met).get('precision') |float) }}</td>
+                            <td>{{ '%0.2f'| format(mets.get(accs[3][0]).get(met).get('recall') |float) }}</td>
+                            <td>{{ '%0.2f'| format(mets.get(accs[3][0]).get(met).get('f1-score') |float) }}</td>
+                            <td>{{ mets.get(accs[3][0]).get(met).get('support') }}</td>
+                        </tr>
+                        {% endfor %}
+                        <tr>
+                            <td colspan="5">{{ accs[3][0] }} : {{ defs.get(accs[3][0]) }}</td>
+                        </tr>
+                    </table></center>
+            </div>
+
+            <div class="col-2">
+                <br><center>{{ accs[4][0] }} Accuracy: {{ '%0.2f'|format(accs[4][1])|float }}
+                    <table>
+                        <tr>
+                            <td></td>
+                            <!-- Titles -->
+                            <td><b>Precision</b></td>
+                            <td><b>Recall</b></td>
+                            <td><b>F1 Score</b></td>
+                            <td><b>Support</b></td>
+                        </tr>
+                        {% for met in mets.get(accs[4][0]): %}
+                        <tr>
+                            <!-- Columns -->
+                            <td>{{ met }}</td>
+                            <td>{{ '%0.2f'| format(mets.get(accs[4][0]).get(met).get('precision') |float) }}</td>
+                            <td>{{ '%0.2f'| format(mets.get(accs[4][0]).get(met).get('recall') |float) }}</td>
+                            <td>{{ '%0.2f'| format(mets.get(accs[4][0]).get(met).get('f1-score') |float) }}</td>
+                            <td>{{ mets.get(accs[4][0]).get(met).get('support') }}</td>
+                        </tr>
+                        {% endfor %}
+                        <tr>
+                            <td colspan="5">{{ accs[4][0] }} : {{ defs.get(accs[4][0]) }}</td>
+                        </tr>
+                    </table></center>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-1">
+                <br><center>{{ accs[5][0] }} Accuracy: {{ '%0.2f'|format(accs[5][1])|float }}
+                    <table>
+                        <tr>
+                            <td></td>
+                            <!-- Titles -->
+                            <td><b>Precision</b></td>
+                            <td><b>Recall</b></td>
+                            <td><b>F1 Score</b></td>
+                            <td><b>Support</b></td>
+                        </tr>
+                        {% for met in mets.get(accs[5][0]): %}
+                        <tr>
+                            <!-- Columns -->
+                            <td>{{ met }}</td>
+                            <td>{{ '%0.2f'| format(mets.get(accs[5][0]).get(met).get('precision') |float) }}</td>
+                            <td>{{ '%0.2f'| format(mets.get(accs[5][0]).get(met).get('recall') |float) }}</td>
+                            <td>{{ '%0.2f'| format(mets.get(accs[5][0]).get(met).get('f1-score') |float) }}</td>
+                            <td>{{ mets.get(accs[5][0]).get(met).get('support') }}</td>
+                        </tr>
+                        {% endfor %}
+                        <tr>
+                            <td colspan="5">{{ accs[5][0] }} : {{ defs.get(accs[5][0]) }}</td>
+                        </tr>
+                    </table></center>
+            </div>
+
+            <!-- <div class="col-2">
+                <br><center>{{ accs[4][0] }} Accuracy: {{ '%0.2f'|format(accs[4][1])|float }}
+                    <table>
+                        <tr>
+                            <td></td>
+                            
+                            <td><b>Precision</b></td>
+                            <td><b>Recall</b></td>
+                            <td><b>F1 Score</b></td>
+                            <td><b>Support</b></td>
+                        </tr>
+                        {% for met in mets.get(accs[4][0]): %}
+                        <tr>
+                            
+                            <td>{{ met }}</td>
+                            <td>{{ '%0.2f'| format(mets.get(accs[4][0]).get(met).get('precision') |float) }}</td>
+                            <td>{{ '%0.2f'| format(mets.get(accs[4][0]).get(met).get('recall') |float) }}</td>
+                            <td>{{ '%0.2f'| format(mets.get(accs[4][0]).get(met).get('f1-score') |float) }}</td>
+                            <td>{{ mets.get(accs[4][0]).get(met).get('support') }}</td>
+                        </tr>
+                        {% endfor %}
+                        <tr>
+                            <td colspan="5">{{ accs[4][0] }} : {{ defs.get(accs[4][0]) }}</td>
+                        </tr>
+                    </table></center>
+            </div> -->
+        </div>
+
+    </div>
+</div>
+
+{% endblock %}

@@ -3,20 +3,21 @@
 {% block body %}
 
 <ul class="tabs">
-    <li class="tab">Upload files</li>
-    <li class="tab">Apply imputation</li>
-    <li class="active tab">Choose the learning method</li>
+    <li class="pass tab" id="" onclick="sure(this.id)">Upload files</li>
+    <li class="pass tab" id="imputation" onclick="sure(this.id)">Apply imputation</li>
+    <li class="active tab" id="learning">Choose the learning method</li>
 </ul>
 
 <div class="container">
     <div id="choose-learning" data-tab-content>
         <div class="titles">Choose the learning method</div>
+        
         <div class="question">Which method do you want to use?</div>
         <div>
-            <br><table>
+            <br><table class="options">
                     <tr>
-                        <th>Supervised Learning</th>
-                        <th>Unsupervised learning</th> 
+                        <td>Supervised Learning</td>
+                        <td>Unsupervised learning</td> 
                     </tr>
                     <tr>
                         <td><p>Data

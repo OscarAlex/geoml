@@ -9,15 +9,28 @@
 </ul> -->
 
 <ul class="tabs">
-    <li class="active tab">Upload files</li>
-    <li class="tab">Apply imputation</li>
-    <li class="tab">Choose the learning method</li>
+    <li class="active tab" id="">Upload files</li>
+    <li class="tab" id="imputation">Apply imputation</li>
+    <li class="tab" id="learning">Choose the learning method</li>
 </ul>
 
 <div class="container">
     <div class="tab-content">
         <div id="upload-files" data-tab-content class="active">
+            
+            {% with messages= get_flashed_messages() %}
+                {% if messages %}
+                    {% for message in messages %}
+                        <script>
+                            alert("There is something wrong with your file.\n"+
+                            "Make sure your file is in CSV format.");
+                        </script>
+                    {% endfor %}
+                {% endif %}
+            {% endwith %}
+
             <div class="titles">Upload files</div>
+            
             <p class="question">Welcome!</p>
             <br><p>This tool automates the process of applying machine learning to
                 geochemical data. You can use it to discriminate data by classes (e.g.
@@ -38,8 +51,8 @@
             
             <!-- Write your comments here -->
             <center>
-                <br><p><form action= "/add_csv" method= "POST" enctype= "multipart/form-data">
-                    <input type= "file" name= "file"/>
+                <br><p><form action="/add_csv" method="POST" enctype="multipart/form-data">
+                    <input type="file" name="file"/>
                     <div id="upl"><br><button>Upload</button>
                 </form></p>
             </div></center>

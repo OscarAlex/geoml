@@ -3,23 +3,25 @@
 {% block body %}
 
 <ul class="tabs">
-    <li class="tab">Upload files</li>
-    <li class="active tab">Apply imputation</li>
-    <li class="tab">Choose the learning method</li>
+    <!-- <li class="pass tab" onclick="sure()"><a href="/">Upload files</a></li> -->
+    <li class="pass tab" id="" onclick="sure(this.id)">Upload files</li>
+    <li class="active tab" id="imputation">Apply imputation</li>
+    <li class="tab" id="learning">Choose the learning method</li>
 </ul>
 
 <div class="container">
     <div class="tab-content">
         <div id="apply-imputation" data-tab-content>
-            
+
             {% if emptyCols: %}
                 <div class="titles">Warning</div>
                 <p>The system has noticed that the following column(s) in
                     the dataset have not enough data (less than 10%):</p>
+                
                 <p class="question">{{ emptyCols }}</p>
                 
                 <br><p class="question">What would you like to do?</p>
-                <table>
+                <table class="options">
                     <tr>
                         <form action="/add_imput" method= "POST">
                             <td><br><input type="radio" name="empty" id="keep" value="1">
@@ -32,15 +34,15 @@
             {% endif %}
 
             <div class="titles">Apply imputation</div>
-            <p class="question">Would you like to apply the Extra Trees Regressor
-                imputation method to all the variables?</p>
+            <p class="question">Extra Trees Regressor imputation method will be applied 
+                to the dataset to fill the missing values.</p>
             <br><p>Extremly Randomized Trees (Extra Trees Regressor for short) is an
                 ensemble algorithm of decision trees. Predictions are made by averaging
                 the prediction of the decision trees or by using majority vote, depending 
                 the case. It can achieve a very good performance due to its simple 
                 algorithm to construct the decision trees.</p>
             
-            <table>
+            <!-- <table class="options">
                 <tr>
                     <form action="/add_imput" method= "POST">
                     <td><br><input type="radio" name="imputation" id="apply" value="1">
@@ -48,9 +50,15 @@
                     <td><br><input type="radio" name="imputation" id="not" value="0">
                         <label for="not">Not apply</label></td>
                 </tr>
-            </table>
-            <br><center><div id="upl"><br><button>Next</button></center>
+            </table> -->
+            <form action="/add_imput" method= "POST">
+            <br><center><div id="upl"><br><button onclick="$('#parent-load').show();">Next</button></center>
             </form>
+            <div id="parent-load" style="display:none;">
+                <div id="loading"><img src="../static/img/loading-3.gif" alt="Loading" width="70%" height="70%" /></div>
+            </div>
+            <!-- <div id="loading"></div> -->
+            
         </div>
     </div>
 </div>

@@ -24,7 +24,7 @@
         <div>
             <center><table id="feats">
                 <!-- Travel through features, step 3 -->
-                {% for i in range(0, features|length, 6): %}
+                {% for i in range(0, features|length, 3): %}
                 <tr>
                     <!-- if there is an element -->
                     <td>{% if features[i]: %}
@@ -40,22 +40,6 @@
                         <label for={{features[i+2]}}>{{features[i+2]}}</label>
                     {% endif %}</td>
                 </tr>
-                {% if features[i+3]: %}
-                <tr class="even">
-                    <td>{% if features[i+3]: %}
-                        <input type="checkbox" name="features" id={{features[i+3]}} value={{i+3}}>
-                        <label for={{features[i+3]}}>{{features[i+3]}}</label>
-                    {% endif %}</td>
-                    <td>{% if features[i+4]: %}
-                        <input type="checkbox" name="features" id={{features[i+4]}} value={{i+4}}>
-                        <label for={{features[i+4]}}>{{features[i+4]}}</label>
-                    {% endif %}</td>
-                    <td>{% if features[i+5]: %}
-                        <input type="checkbox" name="features" id={{features[i+5]}} value={{i+5}}>
-                        <label for={{features[i+5]}}>{{features[i+5]}}</label>
-                    {% endif %}</td>
-                </tr>
-                {% endif %}
                 {% endfor %}
             </table></center>
         </div>

@@ -1,0 +1,46 @@
+{% extends 'layout.html' %}
+
+{% block body %}
+
+<ul class="tabs">
+    <li class="pass tab">Supervised learning</li>
+    <li class="pass tab">1. Select the variables</li>
+    <li class="pass tab">2. Balance the data</li>
+    <li class="pass tab">3. Split the data</li>
+    <li class="pass tab">4. Classification report</li>
+    <li class="active tab">5. Classify new samples</li>
+    <li class="tab">6. Classification results</li>
+</ul>
+
+<div class="container">
+    <div id="choose-learning" data-tab-content>
+        <div class="titles">Classify new samples</div>
+        <!-- <center><b>with the model</b></center> -->
+    
+    <p>Now that the model is ready, it can be used to classify new samples.
+        Please upload a file with the following requirements:</p>
+    
+    <br><p>
+        <ul>
+            <li>Be in CSV format</li>
+            <li>Only numeric data features (oxides must be entered as percentages
+                and single elements must be entered as parts per million - ppm)</li>
+            <li>Only named variables in the first row</li>
+        </ul>
+    
+    <br><p>The feature variables (independent variables) must be named exactly
+        as follows because the model was trained with those features. The
+        model will classify the new samples according to the following feature
+        values:</p>
+        
+        <br><p class="question">{{ feats }}</p>
+        <center>
+            <br><p><form action="/add_classify" method="POST" enctype="multipart/form-data">
+                <input type="file" name="file"/>
+                <div id="upl"><br><button>Upload and classify</button>
+            </form></p>
+        </div></center>
+    </div>
+</div>
+
+{% endblock %}
