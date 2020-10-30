@@ -1,5 +1,5 @@
 #Flask
-from flask import Flask, render_template, request, redirect, url_for, flash, send_file
+from flask import Flask, render_template, request, redirect, url_for, flash, send_file, make_response
 from werkzeug.utils import secure_filename
 #Data
 import pandas as pd
@@ -592,27 +592,27 @@ def Results():
     Balance.data= Imputed_Data.copy()
     return render_template('results.html', table=[New_Data.to_html(classes='data', header="true")])
 
-import io
-import csv
+from io import StringIO
 @app.route('/add_results', methods=['GET'])
 def ADD_Results():
+    #Create StringIO
+    execel_file= StringIO()
+    #Name of the file
+    filename= "%s.csv" % ('output file')
+    #Dataframe to csv
     global New_Data
-    file_download= New_Data#.to_csv()
-    proxy= io.StringIO()
+    New_Data.to_csv(execel_file, encoding='utf-8')
+    #Get dataframe data
+    csv_output= execel_file.getvalue()
+    #Close
+    execel_file.close()
 
-    writer= csv.writer(proxy, dialect='excel', delimiter=',')
-    writer.writerow(file_download)
-
-    #Creating the byteIO object from the StringIO Object
-    mem= io.BytesIO()
-    mem.write(proxy.getvalue().encode('utf-8'))
-    mem.seek(0)
-    proxy.close()
-
-    return send_file(mem, as_attachment=True,
-                     attachment_filename='results.csv',
-                     mimetype='text/csv'
-                    )
+    resp= make_response(csv_output)
+    #Filename
+    resp.headers["Content-Disposition"]= ("attachment; filename=%s" % filename)
+    #Csv
+    resp.headers["Content-Type"]= "text/csv"
+    return resp
 
 ################
 ##  Something ##
