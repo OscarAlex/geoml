@@ -26,6 +26,7 @@
                 <!-- Travel through features, step 3 -->
                 {% for i in range(0, features|length, 3): %}
                 <tr>
+                    <form action="/add_unsupfeats" method= "POST">
                     <!-- if there is an element -->
                     <td>{% if features[i]: %}
                         <input type="checkbox" name="features" id={{features[i]}} value={{i}}>
@@ -41,7 +42,9 @@
                     {% endif %}</td>
                 </tr>
                 {% endfor %}
-            </table></center>
+            </table>
+            <br><div id="upl"><br><button>Next</button></center>
+            </form>
         </div>
     </div>    
 </div>

@@ -1,14 +1,14 @@
 #Flask
 from flask import Flask, render_template, request, redirect, url_for, flash, send_file, make_response
 from werkzeug.utils import secure_filename
-#Data
+#Dataframes and arrays
 import pandas as pd
 import numpy as np
 #Imputing
 from sklearn.experimental import enable_iterative_imputer  
 from sklearn.impute import IterativeImputer
 from sklearn.ensemble import ExtraTreesRegressor as ETR
-#Data
+#Reduce data noise
 from sklearn.utils import resample
 from sklearn.model_selection import train_test_split
 from sklearn import preprocessing
@@ -25,6 +25,8 @@ from sklearn import metrics
 from sklearn.metrics import classification_report
 import eli5
 from eli5.sklearn import PermutationImportance
+#Download CSV
+from io import StringIO
 
 app= Flask(__name__)
 app.secret_key= 'secret'
@@ -63,6 +65,7 @@ def Add_CSV():
             fileLoaded= request.files['file']
             
             global Data
+            #Get dataframe
             Data= getFile(fileLoaded)
 
             #Treeshold if NaN
@@ -256,6 +259,7 @@ def Balance():
     Balance.data= Selected_Data.copy()
     return render_template('balance.html', samples=zip(Samples_Count, range(len(Samples_Count))))
 
+Selected_Classes= ''
 @app.route('/add_balance', methods=['POST'])
 def Add_Balance():
     if request.method == 'POST':
@@ -265,7 +269,7 @@ def Add_Balance():
 
         #Get classes selected
         cl= request.form.getlist('classes')
-        cl= [int(i) for i in cl] 
+        cl= [int(i) for i in cl]
         #Split dataframe by class
         splits= list(data.groupby(data.columns[-1]))
         #Sort according to Samples_Count
@@ -273,7 +277,10 @@ def Add_Balance():
         splits.sort(key=lambda x: sorted_classes.index(x[0]))
         #Get selected classes
         selected_splits= [splits[i] for i in cl]
-        #print(selected_splits)
+        print(selected_splits)
+        global Selected_Classes
+        Selected_Classes= ', '.join(classes[0] for classes in selected_splits)
+        
         #Get if apply upsampling
         upsamp= request.form['balance']
         #Upsampling
@@ -357,7 +364,7 @@ def ADD_Split():
 
                 #Dictionaries of parameters for GridSearchCV
                 kn_params= {
-                    'n_neighbors' : [5, 20],
+                    'n_neighbors': [5, 20],
                     'weights': ['uniform', 'distance']
                 }
                 lr_params = {
@@ -393,7 +400,7 @@ def ADD_Split():
                         mlp_name:'It is a feedforward backpropagation artificial neural network that generates a set of outputs from a set of inputs.',
                         dt_name:'It breaks down a dataset into smaller subsets based on most significant attributes that makes the sets distinct.',
                         rf_name:'It builds multiple decision trees and merges them together to get a more stable prediction. It searches for the best feature among a random subset instead of the most important feature while splitting a node.',
-                        }
+                      }
 
                 #Function to create the GridSearch model
                 #Parameters= List of [model, name] and dictionary of parameters
@@ -403,7 +410,6 @@ def ADD_Split():
                                             scoring= 'accuracy')
                     #Return GSCV model and name of the classifier
                     return grid_model, model[1]
-                
                 
                 #Function to train the GSCV model
                 #Parameter= GSCV model
@@ -421,7 +427,13 @@ def ADD_Split():
                     #Classification report
                     clas_report= classification_report(y_tst, predict, output_dict=True)
                     #Delete accuracy key and value from clas_report
-                    del clas_report['accuracy']
+                    #del clas_report['accuracy']
+                    clas_report['---'] = clas_report.pop('accuracy')
+                    clas_report['---'] = {  'precision': '---',
+                                            'recall': '---',
+                                            'f1-score': '---',
+                                            'support': '---'
+                                         }
                     #Add name of the classifier and its metrics
                     reports[grid_model[1]]= clas_report
                     return fitted_model, grid_model[1]
@@ -471,6 +483,7 @@ def ADD_Split():
         
         #Create Classifications object
         class_model= Classifications()
+        
         #Get the results of train and evaluate the classifiers
         models_metrics= class_model.results(x_tr, y_tr, x_tst, y_tst)
 
@@ -554,7 +567,7 @@ def ADD_Report():
 def Classify():
     #Copy dataset when refresh page in case of return
     #Balance.data= Imputed_Data.copy()
-    return render_template('classify.html', feats=Selected_Feats)
+    return render_template('classify.html', feats=Selected_Feats, classes=Selected_Classes)
 
 New_Data= pd.DataFrame()
 @app.route('/add_classify', methods=['POST'])
@@ -576,8 +589,13 @@ def ADD_Classify():
 
         print(New_Data)
         global Best_Model
-        #Best_Model.predict()
-        New_Data[Selected_Data.columns[-1]]= Best_Model.predict(New_Data) 
+        #Add new column with the predictions
+        New_Data[Selected_Data.columns[-1]]= Best_Model.predict(New_Data)
+        #Probabilitie of classification
+        probabilities= Best_Model.predict_proba(New_Data[New_Data.columns[:-1]])
+        print(probabilities)
+        New_Data['proba']= np.array([max(x) for x in probabilities])
+
         New_Data.index += 1 
         
         print(New_Data)
@@ -592,16 +610,16 @@ def Results():
     Balance.data= Imputed_Data.copy()
     return render_template('results.html', table=[New_Data.to_html(classes='data', header="true")])
 
-from io import StringIO
 @app.route('/add_results', methods=['GET'])
 def ADD_Results():
     #Create StringIO
     execel_file= StringIO()
     #Name of the file
-    filename= "%s.csv" % ('output file')
-    #Dataframe to csv
+    filename= "%s.csv" % ('prediction_file')
+    
     global New_Data
-    New_Data.to_csv(execel_file, encoding='utf-8')
+    #Dataframe to csv
+    New_Data.to_csv(execel_file, index=False, encoding='utf-8')
     #Get dataframe data
     csv_output= execel_file.getvalue()
     #Close

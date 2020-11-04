@@ -29,11 +29,15 @@
         </ul>
     
     <br><p>The feature variables (independent variables) must be named exactly
-        as follows because the model was trained with those features. The
-        model will classify the new samples according to the following feature
-        values:</p>
+        as follows because the model was trained with those features:</p>
         
-        <br><p class="question">{{ feats }}</p>
+    <br><p class="question">{{ feats }}</p>
+    
+    <br><br><p>And it will classify the new samples according to the following 
+        selected classes:</p>
+    
+    <br><p class="question">{{ classes }}</p>
+
         <center>
             <br><p><form action="/add_classify" method="POST" enctype="multipart/form-data">
                 <input type="file" name="file"/>
