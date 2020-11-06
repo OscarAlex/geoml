@@ -15,7 +15,7 @@
 <div class="container">
     <div id="choose-learning" data-tab-content>
         <div class="titles">Classify new samples</div>
-        <!-- <center><b>with the model</b></center> -->
+        <!-- <center><b>with the {{ model }} model</b></center> -->
     
     <p>Now that the model is ready, it can be used to classify new samples.
         Please upload a file with the following requirements:</p>
@@ -37,7 +37,10 @@
         selected classes:</p>
     
     <br><p class="question">{{ classes }}</p>
-
+    
+    <br><br><p>The Extra Tree Regressor method and normalization will be
+        applied to clean the dataset.</p>
+    
         <center>
             <br><p><form action="/add_classify" method="POST" enctype="multipart/form-data">
                 <input type="file" name="file"/>

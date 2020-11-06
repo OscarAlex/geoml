@@ -1,14 +1,14 @@
 #Flask
 from flask import Flask, render_template, request, redirect, url_for, flash, send_file, make_response
 from werkzeug.utils import secure_filename
-#Dataframes and arrays
+#Data
 import pandas as pd
 import numpy as np
 #Imputing
 from sklearn.experimental import enable_iterative_imputer  
 from sklearn.impute import IterativeImputer
 from sklearn.ensemble import ExtraTreesRegressor as ETR
-#Reduce data noise
+#Data
 from sklearn.utils import resample
 from sklearn.model_selection import train_test_split
 from sklearn import preprocessing
@@ -27,7 +27,6 @@ import eli5
 from eli5.sklearn import PermutationImportance
 #Download CSV
 from io import StringIO
-
 app= Flask(__name__)
 app.secret_key= 'secret'
 
@@ -45,10 +44,10 @@ def Index():
 
 #Function to read the entered csv
 def getFile(fileLoaded):
-    fileLoaded.save(secure_filename(fileLoaded.filename))
+    #fileLoaded.save(secure_filename(fileLoaded.filename))
     #Get file
-    fileSaved= fileLoaded.filename
-    df= pd.read_csv(fileSaved)#, engine='python')
+    #fileSaved= fileLoaded.filename
+    df= pd.read_csv(fileLoaded)
     #Drop completely empty rows, reset indexes and drop index column
     df= df.dropna(how='all').reset_index().drop('index', axis=1)
     #Drop completely empty columns
@@ -65,7 +64,6 @@ def Add_CSV():
             fileLoaded= request.files['file']
             
             global Data
-            #Get dataframe
             Data= getFile(fileLoaded)
 
             #Treeshold if NaN
@@ -119,7 +117,7 @@ def imputData(data):
             print(x)
             print(y)
             print(z)
-            #Extra Tree Classifier
+            #Extra Tree Regressor
             impute_est= ETR(n_estimators=10, random_state=0)
             #Iterative imputer
             estimator= IterativeImputer(random_state=0, estimator=impute_est)
@@ -153,10 +151,10 @@ def Add_Imput():
         
         #Imputate data
         imp_data= imputData(data)
-        #Assign third stage the second stage
+        
         global Imputed_Data
-        Imputed_Data= imp_data.copy()
         global Imputed_Data_Cols
+        Imputed_Data= imp_data.copy()
         Imputed_Data_Cols= list(Imputed_Data.columns)
         print(Imputed_Data)
         return redirect(url_for('Learning'))
@@ -219,13 +217,7 @@ def Add_SupFeats():
         global Samples_Count
         #Count samples per class and convert to list with indexes
         Samples_Count= clas.value_counts().reset_index().values.tolist()
-        """
-        #Get total of samples
-        total= sum(sampl[1] for sampl in Samples_Count)
-        #Append percent of the class in the dataset
-        for sample in Samples_Count:
-            sample.append(format(sample[1]/total, '.2f'))
-        """
+        
         #Sort samples
         Samples_Count.sort(key=lambda x: -x[1])
         print(Samples_Count)
@@ -269,7 +261,7 @@ def Add_Balance():
 
         #Get classes selected
         cl= request.form.getlist('classes')
-        cl= [int(i) for i in cl]
+        cl= [int(i) for i in cl] 
         #Split dataframe by class
         splits= list(data.groupby(data.columns[-1]))
         #Sort according to Samples_Count
@@ -277,10 +269,10 @@ def Add_Balance():
         splits.sort(key=lambda x: sorted_classes.index(x[0]))
         #Get selected classes
         selected_splits= [splits[i] for i in cl]
-        print(selected_splits)
+        
         global Selected_Classes
         Selected_Classes= ', '.join(classes[0] for classes in selected_splits)
-        
+
         #Get if apply upsampling
         upsamp= request.form['balance']
         #Upsampling
@@ -316,11 +308,18 @@ def Split():
     return render_template('split.html')
 
 #Dictionaries
-Sorted_Accs= {}
-Mets= {}
-Definitions= {}
+Accuracies= {}
+Metrics= {}
+Accuracies_Trees= {}
+Metrics_Trees= {}
 Importances= {}
-Best_Model= ()
+Definitions= {}
+Best_Model= []
+Best_Model_Name= ''
+
+Best_Acc= []
+Best_Metric= []
+Best_Import= []
 @app.route('/add_split', methods=['POST'])
 def ADD_Split():
     if request.method == 'POST':
@@ -331,7 +330,7 @@ def ADD_Split():
         #Get percentage of training set
         train= request.form['train']
         train= int(train)/100
-        #print(train)
+        
         #Get class column
         y= data[data.columns[-1]]
         #Drop class column from the dataset
@@ -347,7 +346,7 @@ def ADD_Split():
         class Classifications:
             #Function to return 2 dictionaries of accuracies and the other metrics
             #Parameters= training and testing sets
-            def results(self, x_tr, y_tr, x_tst, y_tst):#, model, params):
+            def results(self, x_tr, y_tr, x_tst, y_tst):
                 #List of the models of the classifiers and its name
                 kn_name= 'K-Nearest Neighbors'
                 lr_name= 'Logistic Regression'
@@ -357,14 +356,14 @@ def ADD_Split():
                 rf_name= 'Random Forest'
                 knn= [KNeighborsClassifier(), kn_name]
                 lr= [LogisticRegression(), lr_name]
-                svm= [SVC(), svm_name]
+                svm= [SVC(probability=True), svm_name]
                 mlp= [MLPClassifier(), mlp_name]
                 dt= [DecisionTreeClassifier(), dt_name]
                 rf= [RandomForestClassifier(), rf_name]
 
                 #Dictionaries of parameters for GridSearchCV
                 kn_params= {
-                    'n_neighbors': [5, 20],
+                    'n_neighbors' : [5, 20],
                     'weights': ['uniform', 'distance']
                 }
                 lr_params = {
@@ -391,8 +390,10 @@ def ADD_Split():
                 }
 
                 #Dictionaries
+                #Metrics except dt and rf
                 accs= {}
                 reports= {}
+                #Models and definitions
                 models= {}
                 defs= { kn_name:'It stores all available cases and classifies new cases by a majority vote of its k neighbors.',
                         lr_name:'It predicts the probability of occurrence of an event by fitting data to a logit function.',
@@ -401,6 +402,10 @@ def ADD_Split():
                         dt_name:'It breaks down a dataset into smaller subsets based on most significant attributes that makes the sets distinct.',
                         rf_name:'It builds multiple decision trees and merges them together to get a more stable prediction. It searches for the best feature among a random subset instead of the most important feature while splitting a node.',
                       }
+                #Metrics dt and rf
+                accs_trees= {}
+                reports_trees= {}
+                importances= {}
 
                 #Function to create the GridSearch model
                 #Parameters= List of [model, name] and dictionary of parameters
@@ -427,13 +432,7 @@ def ADD_Split():
                     #Classification report
                     clas_report= classification_report(y_tst, predict, output_dict=True)
                     #Delete accuracy key and value from clas_report
-                    #del clas_report['accuracy']
-                    clas_report['---'] = clas_report.pop('accuracy')
-                    clas_report['---'] = {  'precision': '---',
-                                            'recall': '---',
-                                            'f1-score': '---',
-                                            'support': '---'
-                                         }
+                    del clas_report['accuracy']
                     #Add name of the classifier and its metrics
                     reports[grid_model[1]]= clas_report
                     return fitted_model, grid_model[1]
@@ -448,13 +447,16 @@ def ADD_Split():
                 
                 #Sort accuracies
                 sorted_accs= sorted(accs.items(), key=lambda x: -x[1])
+                
+                global Best_Model_Name
+                global Best_Model
                 #Get best model name
                 best_model_name= sorted_accs[0][0]
-                #Get best model
-                best_model= models.get(best_model_name)
+                Best_Model_Name= best_model_name
+                #Get best model                
+                Best_Model.append(models.get(best_model_name))
 
                 #Feature importance
-                importances= {}
                 #Importance of dataframe
                 def impDf(column_names, importances):
                     df= pd.DataFrame({'feature': column_names,
@@ -474,72 +476,73 @@ def ADD_Split():
                     #print("Feature importance DT ELI5:\n", perm_imp_eli5)
                     importances[grid_model[1]]= perm_imp_eli5
 
-                #Calculate
+                #Remove dt metrics
+                accs_trees[dt_name]= accs.get(dt_name)
+                accs.pop(dt_name)
+                reports_trees[dt_name]= reports.get(dt_name)
+                reports.pop(dt_name)
+                #Remove rf metrics
+                accs_trees[rf_name]= accs.get(rf_name)
+                accs.pop(rf_name)
+                reports_trees[rf_name]= reports.get(rf_name)
+                reports.pop(rf_name)
+                #Calculate feature importances
                 calcFeatImp(fitted_dt)
                 calcFeatImp(fitted_rf)
+                
+                global Best_Acc
+                global Best_Metric
+                global Best_Import
+                #If best model is a tree
+                if (best_model_name == dt_name) or (best_model_name == rf_name):
+                    Best_Acc= accs_trees.get(best_model_name)
+                    accs_trees.pop(best_model_name)
+
+                    Best_Metric= reports_trees.get(best_model_name)
+                    reports_trees.pop(best_model_name)
+
+                    Best_Import= importances.get(best_model_name)
+                    importances.pop(best_model_name)
+                #If best model is not a tree
+                else:
+                    Best_Acc= accs.get(best_model_name)
+                    accs.pop(best_model_name)
+
+                    Best_Metric= reports.get(best_model_name)
+                    reports.pop(best_model_name)
 
                 #Return dictionaries
-                return sorted_accs, reports, defs, importances, best_model
+                return accs, reports, accs_trees, reports_trees, importances, defs#, best_model_name
         
         #Create Classifications object
         class_model= Classifications()
-        
         #Get the results of train and evaluate the classifiers
         models_metrics= class_model.results(x_tr, y_tr, x_tst, y_tst)
-
-        global Sorted_Accs
-        global Mets
-        global Definitions
+        
+        global Accuracies
+        global Metrics
+        global Accuracies_Trees
+        global Metrics_Trees
         global Importances
-        global Best_Model
-        #Sort accuracies
-        Sorted_Accs= models_metrics[0]
+        global Definitions
+
+        #Get accuracies
+        Accuracies= models_metrics[0]
         #Get the metrics of the classifiers
-        Mets= models_metrics[1]
-        print(Mets)
-        #Get the definitions of the classifiers
-        Definitions= models_metrics[2]
+        Metrics= models_metrics[1]
+        print(Metrics)
+
+        #Get accuracies trees
+        Accuracies_Trees= models_metrics[2]
+        #Get the metrics of the classifiers
+        Metrics_Trees= models_metrics[3]
+        print(Metrics)
         #Get the importance of the features
-        Importances= models_metrics[3]
-        #Get the best model
-        Best_Model= models_metrics[4]
+        Importances= models_metrics[4]
 
-        ###################################
-        """
-        #Accuracies
-        for acc in accs:
-            print(acc)
-        global sorted_metrics
-        sorted_metrics= sorted(accs, key=lambda x: -x[1])
-        print(sorted_metrics)
+        #Get the definitions of the classifiers
+        Definitions= models_metrics[5]
 
-
-        def imp_df(column_names, importances):
-            df= pd.DataFrame({'feature': column_names,
-                              'feature_importance': importances}) \
-                .sort_values('feature_importance', ascending=False) \
-                .reset_index(drop=True)
-            return df
-
-        perm= PermutationImportance(grid_dt, 
-                                    cv=None, 
-                                    refit=False, 
-                                    n_iter=50)
-                                    .fit(x_tr, y_tr)
-        #print(data.columns)
-        #print(perm.feature_importances_)
-        perm_imp_eli5= imp_df(x.columns, perm.feature_importances_)
-        print("Feature importance DT ELI5:\n", perm_imp_eli5)
-        print('\n')
-
-        perm= PermutationImportance(grid_rf, 
-                                     cv=None, 
-                                     refit=False, 
-                                     n_iter=50)
-                                     .fit(x_tr, y_tr)
-        perm_imp_eli5= imp_df(x.columns, perm.feature_importances_)
-        print("Feature importance RF ELI5:\n", perm_imp_eli5)
-        """
         return redirect(url_for('Classification'))
 
 ######SUP#######
@@ -547,7 +550,11 @@ def ADD_Split():
 ################
 @app.route('/class_report')
 def Classification():
-    return render_template('class_report.html', accs=Sorted_Accs, mets=Mets, defs=Definitions, imps=Importances)
+    return render_template('class_report.html', accs=Accuracies, accsList= list(Accuracies.keys()), mets=Metrics, 
+                                                accs_trees=Accuracies_Trees, accsTList= list(Accuracies_Trees.keys()), mets_trees=Metrics_Trees, 
+                                                imps=Importances, defs=Definitions,
+                                                best_acc=Best_Acc, best_met=Best_Metric, best_imp=Best_Import,
+                                                best_name=Best_Model_Name)
 
 #Selected features
 Selected_Feats= ''
@@ -567,38 +574,55 @@ def ADD_Report():
 def Classify():
     #Copy dataset when refresh page in case of return
     #Balance.data= Imputed_Data.copy()
-    return render_template('classify.html', feats=Selected_Feats, classes=Selected_Classes)
+    return render_template('classify.html', feats=Selected_Feats, classes=Selected_Classes, model=Best_Model_Name)
+
+def normalizeDf(dframe):
+    #Original dataframe values
+    original_dframe_values= dframe.values
+    #Original dataframe columns
+    original_dframe_cols= dframe.columns
+
+    #Imput data
+    dframe= imputData(dframe)
+    #Normalize values
+    norm_values= preprocessing.normalize(dframe.to_numpy())
+    #Normalized values to dataframe
+    norm_df= pd.DataFrame(data=norm_values, columns=original_dframe_cols)
+    
+    return norm_df, original_dframe_values, original_dframe_cols
 
 New_Data= pd.DataFrame()
+Filename= ''
 @app.route('/add_classify', methods=['POST'])
 def ADD_Classify():
     if request.method == 'POST':
         #Load file
         fileLoaded= request.files['file']
+        #Get file name
+        global Filename
+        Filename= fileLoaded.filename
+        Filename.replace('.csv', '')
+
         #File to csv
         data= getFile(fileLoaded)
-        #Imput data
-        data= imputData(data)
-        
         #Normalize
-        arr_data= preprocessing.normalize(data.to_numpy())###To dataframe
-        global New_Data
-        global Selected_Data
-        New_Data= pd.DataFrame(data=arr_data, columns=Selected_Data.columns[:-1])
-        #New_Data= data.copy()
+        norm_data, dframe_vals, dframe_cols= normalizeDf(data)
 
-        print(New_Data)
+        global Selected_Data
         global Best_Model
         #Add new column with the predictions
-        New_Data[Selected_Data.columns[-1]]= Best_Model.predict(New_Data)
-        #Probabilitie of classification
-        probabilities= Best_Model.predict_proba(New_Data[New_Data.columns[:-1]])
-        print(probabilities)
-        New_Data['proba']= np.array([max(x) for x in probabilities])
+        data[Selected_Data.columns[-1]]= Best_Model[0].predict(norm_data)
+        #Probabilities of classification
+        probabilities= Best_Model[0].predict_proba(norm_data[norm_data.columns])
+        #print(probabilities)
+        #Add new column with the probabilities of classifications
+        data['proba']= np.array([max(x) for x in probabilities])
+        #Index start with 1
+        data.index+= 1 
 
-        New_Data.index += 1 
-        
-        print(New_Data)
+        global New_Data
+        New_Data= data.copy()
+        #print(New_Data)
         return redirect(url_for('Results'))
 
 ######SUP#######
@@ -608,14 +632,15 @@ def ADD_Classify():
 def Results():
     #Copy dataset when refresh page in case of return
     Balance.data= Imputed_Data.copy()
-    return render_template('results.html', table=[New_Data.to_html(classes='data', header="true")])
+    return render_template('results.html', table=[New_Data.replace(np.nan, '', regex=True).to_html(classes='data', header="true")], model=Best_Model_Name)
 
 @app.route('/add_results', methods=['GET'])
 def ADD_Results():
     #Create StringIO
     execel_file= StringIO()
+    global Filename
     #Name of the file
-    filename= "%s.csv" % ('prediction_file')
+    filename= "%s.csv" % (Filename + ' - predictions')
     
     global New_Data
     #Dataframe to csv
