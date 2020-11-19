@@ -1,0 +1,42 @@
+{% extends 'layout.html' %}
+
+{% block body %}
+
+<ul class="tabs">
+    <li class="tab">Unsupervised learning</li>
+    <li class="pass tab">1. Select the features</li>
+    <li class="active tab">2. PCA</li>
+    <li class="tab">3. Cluster reports</li>
+</ul>
+
+<div class="container">
+    <div id="choose-learning" data-tab-content>
+        <div class="titles">Principal Components Analysis</div>
+        
+        <p>Principal Component Analysis (PCA) is used for data reduction. It
+            aims to reduce a large number of variables to a (much) smaller
+            number while losing as little information as possible. The 
+            following {{ no_components }} principal components were generated 
+            using Eigenvalues greater than 1:</p>
+            
+            <center><br>Component loadings
+            <!-- <div class="row"> -->
+                {% for comp in components: %}
+                    {{ comp|safe }}
+                {% endfor %}
+            <!-- </div> -->
+        
+        <br>Summary
+        <!-- <div class="row"> -->
+            {% for sum in summary: %}
+                {{ sum|safe }}
+            {% endfor %}
+        <!-- </div> -->
+        
+        <br><form action="/add_pca" method= "POST">
+            <div id="upl"><br><button>Next</button></center>
+        </form>
+    </div>    
+</div>
+
+{% endblock %}

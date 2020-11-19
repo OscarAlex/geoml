@@ -20,10 +20,12 @@
         <p>The following table shows the classification results per sample (see the
             last column). You can also download the CSV file with the classifications.</p>
         
-        <br><div class="row">
-            {% for tab in table %}
+        <br><div style="width:90vw; height:50vh; overflow:auto; font-size: 15px;">
+            <center>
+            {% for tab in table: %}
                 {{ tab|safe }}
             {% endfor %}
+            </center>
         </div>
         <form action="/add_results" method= "GET">
             <center><div id="upl"><br><button>Download CSV</button></div></center>

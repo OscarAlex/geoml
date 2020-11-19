@@ -1,0 +1,33 @@
+{% extends 'layout.html' %}
+
+{% block body %}
+
+<ul class="tabs">
+    <li class="tab">Unsupervised learning</li>
+    <li class="pass tab">1. Select the features</li>
+    <li class="pass tab">2. PCA</li>
+    <li class="active tab">3. Cluster reports</li>
+</ul>
+
+<div class="container">
+    <div id="choose-learning" data-tab-content>
+        <div class="titles">Clusters report</div>
+        
+        <p>The previous principal components were used to asign each sample to a cluster.
+            The Elbow method was used to choose the best number of clusters and the 
+            K-Means algorithm was used to generate the clusters.</p>
+            
+            <br><div style="width:90vw; height:50vh; overflow:auto; font-size: 15px;">
+                <center>
+                {% for tab in data: %}
+                    {{ tab|safe }}
+                {% endfor %}
+                </center>
+            </div>
+            <form action="/add_results" method= "GET">
+                <center><div id="upl"><br><button>Download CSV</button></div></center>
+            </form>
+    </div>    
+</div>
+
+{% endblock %}

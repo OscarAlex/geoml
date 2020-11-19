@@ -5,7 +5,8 @@
 <ul class="tabs">
     <li class="tab">Unsupervised learning</li>
     <li class="active tab">1. Select the features</li>
-    <li class="tab">2. PCA and cluster reports</li>
+    <li class="tab">2. PCA</li>
+    <li class="tab">3. Cluster reports</li>
 </ul>
 
 <div class="container">
@@ -13,12 +14,7 @@
         <div class="titles">Select the features</div>
         <p>Cluster analysis is a method of unsupervised learning where the
             goal is to discover groups in the data; the groups are not known in
-            advance. The K-Means algorithm is used to generate the clusters.</p>
-        <br><p>Principal Component Analysis (PCA) is used for data reduction. It
-            aims to reduce a large number of variables to a (much) smaller
-            number while losing as little information as possible. The principal
-            components (PCs) are the input to the K-Means algorithm. The
-            PCs and the clusters can help you to understand the data
+            advance. The PCs and the clusters can help you to understand the data
             behavior.</p>
         <div class="question">Please select the variables for the features to be used to create the clusters:</div>
         <div>
@@ -26,7 +22,7 @@
                 <!-- Travel through features, step 3 -->
                 {% for i in range(0, features|length, 3): %}
                 <tr>
-                    <form action="/add_unsupfeats" method= "POST">
+                    <form action="/add_unsup" method= "POST">
                     <!-- if there is an element -->
                     <td>{% if features[i]: %}
                         <input type="checkbox" name="features" id={{features[i]}} value={{i}}>

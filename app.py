@@ -1,17 +1,18 @@
 #Flask
 from flask import Flask, render_template, request, redirect, url_for, flash, send_file, make_response
 from werkzeug.utils import secure_filename
-#Data
+#Dataframe and arrays
 import pandas as pd
 import numpy as np
 #Imputing
 from sklearn.experimental import enable_iterative_imputer  
 from sklearn.impute import IterativeImputer
 from sklearn.ensemble import ExtraTreesRegressor as ETR
-#Data
+#Processing data
 from sklearn.utils import resample
 from sklearn.model_selection import train_test_split
 from sklearn import preprocessing
+from sklearn.preprocessing import scale
 #Classifiers
 from sklearn.model_selection import GridSearchCV
 from sklearn.neighbors import KNeighborsClassifier
@@ -27,8 +28,23 @@ import eli5
 from eli5.sklearn import PermutationImportance
 #Download CSV
 from io import StringIO
+#PCA and clusters
+from sklearn.decomposition import PCA
+from kneed import KneeLocator
+from sklearn.cluster import KMeans
+
 app= Flask(__name__)
 app.secret_key= 'secret'
+
+###############
+## Variables ##
+###############
+
+
+###############
+## Functions ##
+###############
+
 
 ###############
 ##Upload file##
@@ -40,11 +56,16 @@ def Index():
     global emptyCols
     #Reset the variable in case of return
     emptyCols= ''
-    return render_template('index.html')
+    return render_template('files/index.html')
 
+Filename= ''
 #Function to read the entered csv
 def getFile(fileLoaded):
     #fileLoaded.save(secure_filename(fileLoaded.filename))
+    #Get file name
+    global Filename
+    Filename= fileLoaded.filename
+    Filename= Filename.replace('.csv', '')
     #Get file
     #fileSaved= fileLoaded.filename
     df= pd.read_csv(fileLoaded)
@@ -91,7 +112,7 @@ def Add_CSV():
 def Imput():
     #Copy dataset when refresh page in case of return
     Imput.data= Data.copy()
-    return render_template('imputation.html', emptyCols=emptyCols)
+    return render_template('files/imputation.html', emptyCols=emptyCols)
 
 def imputData(data):
         #Separate columns numeric and no numeric
@@ -166,7 +187,7 @@ def Add_Imput():
 def Learning():
     #Copy dataset when refresh page in case of return
     Learning.data= Imputed_Data.copy()
-    return render_template('learning.html')
+    return render_template('files/learning.html')
 
 @app.route('/choose_learn', methods=['POST'])
 def Choose_Learning():
@@ -177,7 +198,8 @@ def Choose_Learning():
             #return render_template('supfeatures.html', variables=imputed_data_cols)
             return redirect(url_for('SupFeats'))
         else:
-            return render_template('unsupfeatures.html', features=Imputed_Data_Cols)
+            #return render_template('unsupfeatures.html', features=Imputed_Data_Cols)
+            return redirect(url_for('UnsupFeats'))
 
 ######SUP#######
 ##Select varia##
@@ -186,7 +208,7 @@ def Choose_Learning():
 def SupFeats():
     #Copy dataset when refresh page in case of return
     SupFeats.data= Imputed_Data.copy()
-    return render_template('supfeatures.html', variables=Imputed_Data_Cols)
+    return render_template('classification/supfeatures.html', variables=Imputed_Data_Cols)
 
 #Selected features
 Selected_Data= pd.DataFrame()
@@ -249,7 +271,7 @@ def Add_SupFeats():
 def Balance():
     #Copy dataset when refresh page in case of return
     Balance.data= Selected_Data.copy()
-    return render_template('balance.html', samples=zip(Samples_Count, range(len(Samples_Count))))
+    return render_template('classification/balance.html', samples=zip(Samples_Count, range(len(Samples_Count))))
 
 Selected_Classes= ''
 @app.route('/add_balance', methods=['POST'])
@@ -305,7 +327,7 @@ def Add_Balance():
 def Split():
     #Copy dataset when refresh page in case of return
     Split.data= Selected_Data.copy()
-    return render_template('split.html')
+    return render_template('classification/split.html')
 
 #Dictionaries
 Accuracies= {}
@@ -550,7 +572,7 @@ def ADD_Split():
 ################
 @app.route('/class_report')
 def Classification():
-    return render_template('class_report.html', accs=Accuracies, accsList= list(Accuracies.keys()), mets=Metrics, 
+    return render_template('classification/class_report.html', accs=Accuracies, accsList= list(Accuracies.keys()), mets=Metrics, 
                                                 accs_trees=Accuracies_Trees, accsTList= list(Accuracies_Trees.keys()), mets_trees=Metrics_Trees, 
                                                 imps=Importances, defs=Definitions,
                                                 best_acc=Best_Acc, best_met=Best_Metric, best_imp=Best_Import,
@@ -574,7 +596,7 @@ def ADD_Report():
 def Classify():
     #Copy dataset when refresh page in case of return
     #Balance.data= Imputed_Data.copy()
-    return render_template('classify.html', feats=Selected_Feats, classes=Selected_Classes, model=Best_Model_Name)
+    return render_template('classification/classify.html', feats=Selected_Feats, classes=Selected_Classes, model=Best_Model_Name)
 
 def normalizeDf(dframe):
     #Original dataframe values
@@ -592,7 +614,6 @@ def normalizeDf(dframe):
     return norm_df, original_dframe_values, original_dframe_cols
 
 New_Data= pd.DataFrame()
-Filename= ''
 @app.route('/add_classify', methods=['POST'])
 def ADD_Classify():
     if request.method == 'POST':
@@ -601,7 +622,7 @@ def ADD_Classify():
         #Get file name
         global Filename
         Filename= fileLoaded.filename
-        Filename.replace('.csv', '')
+        Filename= Filename.replace('.csv', '')
 
         #File to csv
         data= getFile(fileLoaded)
@@ -619,6 +640,8 @@ def ADD_Classify():
         data['proba']= np.array([max(x) for x in probabilities])
         #Index start with 1
         data.index+= 1 
+        #Round 2 decimals
+        data= data.round(decimals=2)
 
         global New_Data
         New_Data= data.copy()
@@ -632,7 +655,7 @@ def ADD_Classify():
 def Results():
     #Copy dataset when refresh page in case of return
     Balance.data= Imputed_Data.copy()
-    return render_template('results.html', table=[New_Data.replace(np.nan, '', regex=True).to_html(classes='data', header="true")], model=Best_Model_Name)
+    return render_template('classification/results.html', table=[New_Data.replace(np.nan, '', regex=True).to_html(classes='data', header="true")], model=Best_Model_Name)
 
 @app.route('/add_results', methods=['GET'])
 def ADD_Results():
@@ -640,7 +663,7 @@ def ADD_Results():
     execel_file= StringIO()
     global Filename
     #Name of the file
-    filename= "%s.csv" % (Filename + ' - predictions')
+    filename= "%s.csv" % (Filename + ' - report')
     
     global New_Data
     #Dataframe to csv
@@ -657,6 +680,162 @@ def ADD_Results():
     resp.headers["Content-Type"]= "text/csv"
     return resp
 
+#####UNSUP######
+##Select varia##
+################
+@app.route('/unsupfeatures')
+def UnsupFeats():
+    #Copy dataset when refresh page in case of return
+    UnsupFeats.data= Imputed_Data.copy()
+    return render_template('clustering/unsupfeatures.html', features=Imputed_Data_Cols)
+
+#Summary dataframe
+Summary= pd.DataFrame()
+#Components dataframe
+Components= pd.DataFrame()
+#Number of components
+ComponentsNo= ()
+#Components dataset
+Comp_Dataset= []
+@app.route('/add_unsup', methods=['POST'])
+def ADD_SupFeats():
+    if request.method == 'POST':
+        #Copy dataset to use locally
+        UnsupFeats()
+        data= UnsupFeats.data.copy()
+
+        #Get features selected
+        fe= request.form.getlist('features')
+        fe= [int(i) for i in fe] 
+        #print(fe)
+        #Concat features columns
+        sel_data= pd.DataFrame()
+        for i in fe:
+            sel_data= pd.concat([sel_data, data[data.columns[i]]], axis=1)
+
+        #Scale
+        scale_df= scale(sel_data)
+        #Covariance matrix
+        covar_matrix= np.cov(scale_df, rowvar=False)
+
+        #Eingenvalues and eigenvectors
+        eigen_values, eigen_vectors= np.linalg.eig(covar_matrix)
+        #Eigenvalues greather than one
+        greater_one= sum(1 for i in eigen_values if i > 1)
+        
+        global ComponentsNo
+        ComponentsNo= greater_one
+
+        ##############SUMMARY TABLE###############
+        #Index of eigen values max to min
+        ix_ei_vals= np.argsort(eigen_values)[::-1]
+        #Sorted variances
+        sort_ei= eigen_values[ix_ei_vals]
+        #Percentage of variance
+        variance_explained= []
+        for i in sort_ei:
+            variance_explained.append((i/sum(sort_ei))*100)
+        #Cumulative percentage
+        cumulative_variance_explained= np.cumsum(variance_explained)
+
+        #Create summary dataframe
+        summary= pd.DataFrame(list(zip(sort_ei, variance_explained, cumulative_variance_explained)),
+                            columns=['SS Loadings', 'Percentage of variance', 'Cumulative percentage']).round(decimals=2)                            
+        
+        #Rename index
+        #summary= summary.rename_axis(('Components'))
+        summary.index+= 1
+        #Drop rows
+        drop_rows= len(summary)-greater_one
+        summary= summary.drop(summary.tail(drop_rows).index)
+
+        global Summary
+        Summary= summary.copy()
+
+        ############COMPONENTS TABLE############
+        #Columns
+        cols= sel_data.columns
+        #PCA
+        pca_spon= PCA(n_components=greater_one)
+        #New variables
+        prin_spon = pca_spon.fit_transform(scale_df)
+        #Component loadings
+        comp_loadings= pca_spon.components_.T * np.sqrt(pca_spon.explained_variance_)
+        #pca_df = pd.DataFrame(data = prin_spon, columns = ['PC1', 'PC2','PC3','PC4','PC5'])
+        
+        #Create dataframe with loadings
+        components= pd.DataFrame(data=comp_loadings, index=cols).round(decimals=2)
+        #Rename columns
+        components= components.rename(columns=lambda x: x+1)
+
+        global Components
+        Components= components.copy()
+        global Comp_Dataset
+        Comp_Dataset= prin_spon.copy()
+        global Selected_Data
+        Selected_Data= sel_data.copy()
+        #global Selected_Data
+        #Selected_Data= sel_data.copy()
+        #print(Selected_Data)
+
+        return redirect(url_for('PCAnalysis'))
+
+#####UNSUP######
+##    PCA     ##
+################
+@app.route('/pca')
+def PCAnalysis():
+    #Copy dataset when refresh page in case of return
+    Balance.data= Imputed_Data.copy()
+    return render_template('clustering/pca.html', summary=[Summary.to_html(header="true")],
+                                       components=[Components.to_html(header="true")],
+                                       no_components=ComponentsNo)
+
+#Labeled data
+Cluster_Data= pd.DataFrame()
+@app.route('/add_pca', methods=['POST'])
+def ADD_PCA():
+    if request.method == 'POST':
+        ks = range(1, 10)
+        inertias = []
+        global Comp_Dataset
+        for k in ks:
+            # Create a KMeans instance with k clusters: model
+            model = KMeans(n_clusters=k)
+            # Fit model to samples
+            model.fit(Comp_Dataset)
+            # Append the inertia to the list of inertias
+            inertias.append(model.inertia_)
+
+        kl = KneeLocator(ks, inertias, curve="convex", direction="decreasing")
+        kmeans = KMeans(n_clusters=kl.elbow).fit(Comp_Dataset)
+        labels = kmeans.predict(Comp_Dataset)
+
+        #data= pd.DataFrame()
+        
+        global Data
+        global Selected_Data
+        
+        data_labeled= Data[Selected_Data.columns]
+        data_labeled['clusters']= [x+1 for x in labels]
+        
+        data_labeled= data_labeled.sort_values('labels')
+        #centroids = kmeans.cluster_centers_
+        
+        global New_Data
+        New_Data= data_labeled.copy()
+
+        return redirect(url_for('ClusterReport'))
+
+#####UNSUP######
+##Clust report##
+################
+@app.route('/cluster_report')
+def ClusterReport():
+    #Copy dataset when refresh page in case of return
+    #Balance.data= Imputed_Data.copy()
+    return render_template('clustering/cluster_report.html', data=[New_Data.replace(np.nan, '', regex=True).to_html(header="true")])
+
 ################
 ##  Something ##
 ################
@@ -664,14 +843,14 @@ if __name__ == '__main__':
     app.run(port = 3000, debug = True)
 
 """
-@app.route('/add_supfeats', methods=['POST'])
-def ADD_SupFeats():
-    if request.method == 'POST':
-        return redirect(url_for('Balance'))
-
 @app.route('/balance')
 def Balance():
     #Copy dataset when refresh page in case of return
     Balance.data= Imputed_Data.copy()
     return render_template('balance.html')
+
+@app.route('/add_supfeats', methods=['POST'])
+def ADD_SupFeats():
+    if request.method == 'POST':
+        return redirect(url_for('Balance'))
 """
