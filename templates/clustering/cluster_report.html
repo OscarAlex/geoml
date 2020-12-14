@@ -13,10 +13,15 @@
     <div id="choose-learning" data-tab-content>
         <div class="titles">Clusters report</div>
         
-        <p>The previous principal components were used to asign each sample to a cluster.
-            The Elbow method was used to choose the best number of clusters and the 
-            K-Means algorithm was used to generate the clusters.</p>
+        <p>The {{ no_components }} previous principal components were used to asign each sample to a cluster.
+            The Elbow method choosed the number of {{ no_clusters }} clusters as the most optimal number of 
+            clusters and the K-Means algorithm was used to generate them.</p>
             
+            <center>
+            {% if no_components == 2: %}
+            <img src="/plot.png" alt="my plot" width="600vw">
+            {% endif %}
+
             <br><div style="width:90vw; height:50vh; overflow:auto; font-size: 15px;">
                 <center>
                 {% for tab in data: %}
@@ -25,7 +30,7 @@
                 </center>
             </div>
             <form action="/add_results" method= "GET">
-                <center><div id="upl"><br><button>Download CSV</button></div></center>
+                <div id="upl"><br><button>Download CSV</button></div></center>
             </form>
     </div>    
 </div>

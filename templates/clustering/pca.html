@@ -33,6 +33,11 @@
             {% endfor %}
         <!-- </div> -->
         
+        <br>The {{ '%0.2f'|format(cum_var) }}% of all data is explained in the previous components (whose eigenvalues are greather than 1), 
+            however, you can see the explained variance of all components in this bar graph.
+        <br><br>
+        <img src="/bar.png" alt="my plot" width="600vw">
+
         <br><form action="/add_pca" method= "POST">
             <div id="upl"><br><button>Next</button></center>
         </form>

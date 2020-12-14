@@ -160,13 +160,22 @@ th, td{
 
 table{
     border: 1px solid black;
+    width: fit-content;
+}
+
+table td{
+    /*width: fit-content;*/
 }
 
 table#feats{
     width: 85vw;
     text-align: left;
-    padding: 20px;
+    padding: 0px;
     /*border-collapse:collapse*/
+}
+
+table#feats td{
+    width: 33%;
 }
 
 td input{

@@ -1,5 +1,5 @@
 #Flask
-from flask import Flask, render_template, request, redirect, url_for, flash, send_file, make_response
+from flask import Flask, render_template, request, redirect, url_for, flash, send_file, make_response, Response####
 from werkzeug.utils import secure_filename
 #Dataframe and arrays
 import pandas as pd
@@ -27,11 +27,16 @@ from sklearn.metrics import classification_report
 import eli5
 from eli5.sklearn import PermutationImportance
 #Download CSV
+import io################
 from io import StringIO
 #PCA and clusters
 from sklearn.decomposition import PCA
 from kneed import KneeLocator
 from sklearn.cluster import KMeans
+
+from matplotlib.backends.backend_agg import FigureCanvasAgg as FigureCanvas
+from matplotlib.figure import Figure#########
+import matplotlib.pyplot as plt
 
 app= Flask(__name__)
 app.secret_key= 'secret'
@@ -39,27 +44,66 @@ app.secret_key= 'secret'
 ###############
 ## Variables ##
 ###############
+#Empty columns before imputing
+emptyCols= ''
+#Filename
+Filename= ''
 
+#Imputed dataset
+Imputed_Data= pd.DataFrame()
+
+#Dataset columns
+Imputed_Data_Cols= []
+#Dataset file
+Data= pd.DataFrame()
+
+#####Classification#####
+#Selected features
+Selected_Data= pd.DataFrame()
+#Samples per class
+Samples_Count= []
+
+#Selected classes to use
+Selected_Classes= ''
+
+#Dictionaries for classification
+Accuracies= {}
+Metrics= {}
+Accuracies_Trees= {}
+Metrics_Trees= {}
+Importances= {}
+Definitions= {}
+Best_Model= []
+Best_Model_Name= ''
+Best_Acc= []
+Best_Metric= []
+Best_Import= []
+
+#Selected features
+Selected_Feats= ''
+
+#Samples to classify
+New_Data= pd.DataFrame()
+
+#Cumulative variance dataframe
+Cum_Variance= pd.DataFrame()
+#Summary dataframe
+Summary= pd.DataFrame()
+#Components dataframe
+Components= pd.DataFrame()
+#Number of components
+ComponentsNo= ()
+#Components dataset
+Comp_Dataset= []
+
+#####Clusters#####
+#Labeled data
+Cluster_Data= pd.DataFrame()
 
 ###############
 ## Functions ##
 ###############
-
-
-###############
-##Upload file##
-###############
-#List with columns almost empty
-emptyCols= ''
-@app.route('/')
-def Index():
-    global emptyCols
-    #Reset the variable in case of return
-    emptyCols= ''
-    return render_template('files/index.html')
-
-Filename= ''
-#Function to read the entered csv
+#Read the entered csv
 def getFile(fileLoaded):
     #fileLoaded.save(secure_filename(fileLoaded.filename))
     #Get file name
@@ -75,8 +119,70 @@ def getFile(fileLoaded):
     df= df.dropna(axis='columns', how='all')
     return df
 
-#Dataset file
-Data= pd.DataFrame()
+#Impute data
+def imputData(data):
+    #Separate columns numeric and no numeric
+    def splitTypes(dframe):
+        objectsName= []
+        objects= pd.DataFrame()
+        #dframeName= []
+        for i in dframe.columns:
+            #If i column is not  float
+            if(not (dframe[i].dtype == np.float64)):
+                #Get name
+                objectsName.append(i)
+                #Get no numeric column
+                objects= pd.concat([objects, dframe[i]], axis=1)
+                #Drop no numeric column
+                dframe= dframe.drop(columns=objectsName[-1])
+        #Get numeric columns
+        dframeName= list(dframe.columns)
+        return dframeName, dframe, objectsName, objects
+
+    w, x, y, z= splitTypes(data)
+    print(w)
+    print(x)
+    print(y)
+    print(z)
+    #Extra Tree Regressor
+    impute_est= ETR(n_estimators=10, random_state=0)
+    #Iterative imputer
+    estimator= IterativeImputer(random_state=0, estimator=impute_est)
+    #Fit transform data
+    impdf= estimator.fit_transform(x)
+    #Concat imputed data and class
+    imp_data= pd.concat([pd.DataFrame(impdf), z], axis=1)
+    #Rename columns
+    imp_data.columns= w + y
+    #Return imputed data
+    return imp_data
+
+#Normalize dataframe
+def normalizeDf(dframe):
+    #Original dataframe values
+    original_dframe_values= dframe.values
+    #Original dataframe columns
+    original_dframe_cols= dframe.columns
+
+    #Imput data
+    dframe= imputData(dframe)
+    #Normalize values
+    norm_values= preprocessing.normalize(dframe.to_numpy())
+    #Normalized values to dataframe
+    norm_df= pd.DataFrame(data=norm_values, columns=original_dframe_cols)
+    
+    return norm_df, original_dframe_values, original_dframe_cols
+
+###############
+##Upload file##
+###############
+@app.route('/')
+def Index():
+    global emptyCols
+    #Reset the variable in case of return
+    emptyCols= ''
+    return render_template('files/index.html')
+
 @app.route('/add_csv', methods=['POST'])
 def Add_CSV():
     if request.method == 'POST':
@@ -114,47 +220,6 @@ def Imput():
     Imput.data= Data.copy()
     return render_template('files/imputation.html', emptyCols=emptyCols)
 
-def imputData(data):
-        #Separate columns numeric and no numeric
-            def splitTypes(dframe):
-                objectsName= []
-                objects= pd.DataFrame()
-                #dframeName= []
-                for i in dframe.columns:
-                    #If i column is not  float
-                    if(not (dframe[i].dtype == np.float64)):
-                        #Get name
-                        objectsName.append(i)
-                        #Get no numeric column
-                        objects= pd.concat([objects, dframe[i]], axis=1)
-                        #Drop no numeric column
-                        dframe= dframe.drop(columns=objectsName[-1])
-                #Get numeric columns
-                dframeName= list(dframe.columns)
-                return dframeName, dframe, objectsName, objects
-
-            w, x, y, z= splitTypes(data)
-            print(w)
-            print(x)
-            print(y)
-            print(z)
-            #Extra Tree Regressor
-            impute_est= ETR(n_estimators=10, random_state=0)
-            #Iterative imputer
-            estimator= IterativeImputer(random_state=0, estimator=impute_est)
-            #Fit transform data
-            impdf= estimator.fit_transform(x)
-            #Concat imputed data and class
-            imp_data= pd.concat([pd.DataFrame(impdf), z], axis=1)
-            #Rename columns
-            imp_data.columns= w + y
-            #Return imputed data
-            return imp_data
-
-#Imputed dataset
-Imputed_Data= pd.DataFrame()
-#Dataset columns
-Imputed_Data_Cols= []
 @app.route('/add_imput', methods=['POST'])
 def Add_Imput():
     if request.method == 'POST':
@@ -210,10 +275,7 @@ def SupFeats():
     SupFeats.data= Imputed_Data.copy()
     return render_template('classification/supfeatures.html', variables=Imputed_Data_Cols)
 
-#Selected features
-Selected_Data= pd.DataFrame()
-#Samples per class
-Samples_Count= []
+
 @app.route('/add_supfeats', methods=['POST'])
 def Add_SupFeats():
     if request.method == 'POST':
@@ -273,7 +335,6 @@ def Balance():
     Balance.data= Selected_Data.copy()
     return render_template('classification/balance.html', samples=zip(Samples_Count, range(len(Samples_Count))))
 
-Selected_Classes= ''
 @app.route('/add_balance', methods=['POST'])
 def Add_Balance():
     if request.method == 'POST':
@@ -329,19 +390,6 @@ def Split():
     Split.data= Selected_Data.copy()
     return render_template('classification/split.html')
 
-#Dictionaries
-Accuracies= {}
-Metrics= {}
-Accuracies_Trees= {}
-Metrics_Trees= {}
-Importances= {}
-Definitions= {}
-Best_Model= []
-Best_Model_Name= ''
-
-Best_Acc= []
-Best_Metric= []
-Best_Import= []
 @app.route('/add_split', methods=['POST'])
 def ADD_Split():
     if request.method == 'POST':
@@ -561,7 +609,6 @@ def ADD_Split():
         print(Metrics)
         #Get the importance of the features
         Importances= models_metrics[4]
-
         #Get the definitions of the classifiers
         Definitions= models_metrics[5]
 
@@ -578,8 +625,6 @@ def Classification():
                                                 best_acc=Best_Acc, best_met=Best_Metric, best_imp=Best_Import,
                                                 best_name=Best_Model_Name)
 
-#Selected features
-Selected_Feats= ''
 @app.route('/add_report', methods=['POST'])
 def ADD_Report():
     if request.method == 'POST':
@@ -598,22 +643,6 @@ def Classify():
     #Balance.data= Imputed_Data.copy()
     return render_template('classification/classify.html', feats=Selected_Feats, classes=Selected_Classes, model=Best_Model_Name)
 
-def normalizeDf(dframe):
-    #Original dataframe values
-    original_dframe_values= dframe.values
-    #Original dataframe columns
-    original_dframe_cols= dframe.columns
-
-    #Imput data
-    dframe= imputData(dframe)
-    #Normalize values
-    norm_values= preprocessing.normalize(dframe.to_numpy())
-    #Normalized values to dataframe
-    norm_df= pd.DataFrame(data=norm_values, columns=original_dframe_cols)
-    
-    return norm_df, original_dframe_values, original_dframe_cols
-
-New_Data= pd.DataFrame()
 @app.route('/add_classify', methods=['POST'])
 def ADD_Classify():
     if request.method == 'POST':
@@ -689,14 +718,9 @@ def UnsupFeats():
     UnsupFeats.data= Imputed_Data.copy()
     return render_template('clustering/unsupfeatures.html', features=Imputed_Data_Cols)
 
-#Summary dataframe
-Summary= pd.DataFrame()
-#Components dataframe
-Components= pd.DataFrame()
-#Number of components
-ComponentsNo= ()
-#Components dataset
-Comp_Dataset= []
+Variance= []
+Final_Variance= ()
+PCA_Transpose= []
 @app.route('/add_unsup', methods=['POST'])
 def ADD_SupFeats():
     if request.method == 'POST':
@@ -737,18 +761,20 @@ def ADD_SupFeats():
             variance_explained.append((i/sum(sort_ei))*100)
         #Cumulative percentage
         cumulative_variance_explained= np.cumsum(variance_explained)
-
+        
+        final_cum_var= cumulative_variance_explained[greater_one-1]
+        global Final_Variance
+        Final_Variance= final_cum_var
         #Create summary dataframe
         summary= pd.DataFrame(list(zip(sort_ei, variance_explained, cumulative_variance_explained)),
                             columns=['SS Loadings', 'Percentage of variance', 'Cumulative percentage']).round(decimals=2)                            
-        
-        #Rename index
-        #summary= summary.rename_axis(('Components'))
+    
+        #Start index from 1
         summary.index+= 1
         #Drop rows
         drop_rows= len(summary)-greater_one
         summary= summary.drop(summary.tail(drop_rows).index)
-
+        
         global Summary
         Summary= summary.copy()
 
@@ -760,7 +786,7 @@ def ADD_SupFeats():
         #New variables
         prin_spon = pca_spon.fit_transform(scale_df)
         #Component loadings
-        comp_loadings= pca_spon.components_.T * np.sqrt(pca_spon.explained_variance_)
+        comp_loadings= pca_spon.components_.T*np.sqrt(pca_spon.explained_variance_)
         #pca_df = pd.DataFrame(data = prin_spon, columns = ['PC1', 'PC2','PC3','PC4','PC5'])
         
         #Create dataframe with loadings
@@ -774,11 +800,44 @@ def ADD_SupFeats():
         Comp_Dataset= prin_spon.copy()
         global Selected_Data
         Selected_Data= sel_data.copy()
-        #global Selected_Data
-        #Selected_Data= sel_data.copy()
+        global PCA_Transpose
+        PCA_Transpose= np.transpose(pca_spon.components_[0:2, :])
         #print(Selected_Data)
-
+        global Variance
+        Variance= variance_explained
         return redirect(url_for('PCAnalysis'))
+
+def create_bar_plot():
+    fig, ax= plt.subplots(1, 1)
+    #Bar plot 
+    ax.bar(range(1, len(Variance)+1), Variance) 
+    #Remove axes splines 
+    for s in ['top', 'bottom', 'left', 'right']: 
+        ax.spines[s].set_visible(False) 
+    #Remove x, y ticks 
+    ax.xaxis.set_ticks_position('none') 
+    ax.yaxis.set_ticks_position('none') 
+    #Add padding between axes and labels 
+    ax.xaxis.set_tick_params(pad = 5) 
+    ax.yaxis.set_tick_params(pad = 10) 
+    #Add annotation to bars
+    rects= ax.patches
+    for i, v in zip(rects, Variance):
+        height= i.get_height()
+        ax.text(i.get_x()+i.get_width()/2, height+2, (str(round(v,2))+'%'),
+                ha='center', va='bottom')
+    #Add Plot Title 
+    ax.set_title('Components variances\n') 
+    ax.set_xlabel('Components') 
+    ax.set_ylabel('Data percentage')
+    return fig
+
+@app.route('/bar.png')
+def bar_png():
+    fig= create_bar_plot()
+    output= io.BytesIO()
+    FigureCanvas(fig).print_png(output)
+    return Response(output.getvalue(), mimetype='image/png')
 
 #####UNSUP######
 ##    PCA     ##
@@ -787,45 +846,90 @@ def ADD_SupFeats():
 def PCAnalysis():
     #Copy dataset when refresh page in case of return
     Balance.data= Imputed_Data.copy()
-    return render_template('clustering/pca.html', summary=[Summary.to_html(header="true")],
-                                       components=[Components.to_html(header="true")],
-                                       no_components=ComponentsNo)
+    return render_template('clustering/pca.html', summary=[Summary.to_html(header="true")], cum_var= Final_Variance,
+                                                  components=[Components.to_html(header="true")],
+                                                  no_components=ComponentsNo)
 
-#Labeled data
-Cluster_Data= pd.DataFrame()
+PCA_Labeled= pd.DataFrame()
+No_Clusters= ()
 @app.route('/add_pca', methods=['POST'])
 def ADD_PCA():
     if request.method == 'POST':
-        ks = range(1, 10)
-        inertias = []
+        ks= range(1, 10)
+        inertias= []
         global Comp_Dataset
         for k in ks:
             # Create a KMeans instance with k clusters: model
-            model = KMeans(n_clusters=k)
+            model= KMeans(n_clusters=k)
             # Fit model to samples
             model.fit(Comp_Dataset)
             # Append the inertia to the list of inertias
             inertias.append(model.inertia_)
 
-        kl = KneeLocator(ks, inertias, curve="convex", direction="decreasing")
-        kmeans = KMeans(n_clusters=kl.elbow).fit(Comp_Dataset)
-        labels = kmeans.predict(Comp_Dataset)
+        kl= KneeLocator(ks, inertias, curve="convex", direction="decreasing")
+        kmeans= KMeans(n_clusters=kl.elbow).fit(Comp_Dataset)
+        labels= kmeans.predict(Comp_Dataset)
 
-        #data= pd.DataFrame()
-        
         global Data
         global Selected_Data
-        
+        global PCA_Labeled
+        global No_Clusters
+
         data_labeled= Data[Selected_Data.columns]
-        data_labeled['clusters']= [x+1 for x in labels]
-        
-        data_labeled= data_labeled.sort_values('labels')
-        #centroids = kmeans.cluster_centers_
+        data_labeled['cluster']= [x+1 for x in labels]
+        PCA_Labeled= data_labeled.copy()
+        No_Clusters= kl.elbow
+
+        data_labeled= data_labeled.sort_values('cluster')
+        print(data_labeled)
+        #centroids= kmeans.cluster_centers_
         
         global New_Data
         New_Data= data_labeled.copy()
-
         return redirect(url_for('ClusterReport'))
+
+#################
+def create_pc_plot():
+    global PCA_Transpose
+    global PCA_Labeled
+    global Selected_Data
+    global Comp_Dataset
+
+    trans= PCA_Transpose.copy()
+    data_labeled= PCA_Labeled.copy()
+    n= trans.shape[0]
+
+    df= pd.DataFrame(data=Comp_Dataset, columns=[0, 1])
+    xs= df[0]
+    ys= df[1]
+    #print(df)
+    #print(data_labeled)
+    scalex= 1.0/(xs.max()-xs.min())
+    scaley= 1.0/(ys.max()-ys.min())
+
+    fig, ax= plt.subplots(1, 1)
+    ax.scatter(xs*scalex, ys*scaley, c=data_labeled['cluster'], label=data_labeled['cluster'])
+    for i in range(n):
+            ax.arrow(0, 0, trans[i,0], trans[i,1], head_width=0.02, head_length=0.04, color='r', alpha= 0.5)
+            #if labels is None:
+            #   plt.text(trans[i,0]*1.15, trans[i,1]*1.15, "Var"+str(i+1), color='g', ha='center', va='center')
+            #else:
+            ax.text(trans[i,0]*1.15, trans[i,1]*1.15, Selected_Data.columns[i], color='g', ha='center', va='center')
+    #ax.set_xlim(-1,1)
+    #ax.set_ylim(-1, 1)
+    ax.set_title('Importance of features after PCA\n')
+    ax.set_xlabel("PC1")
+    ax.set_ylabel("PC2")
+    ax.grid()
+    ax.legend()
+    return fig
+
+@app.route('/plot.png')
+def plot_png():
+    fig= create_pc_plot()
+    output= io.BytesIO()
+    FigureCanvas(fig).print_png(output)
+    return Response(output.getvalue(), mimetype='image/png')
 
 #####UNSUP######
 ##Clust report##
@@ -834,13 +938,15 @@ def ADD_PCA():
 def ClusterReport():
     #Copy dataset when refresh page in case of return
     #Balance.data= Imputed_Data.copy()
-    return render_template('clustering/cluster_report.html', data=[New_Data.replace(np.nan, '', regex=True).to_html(header="true")])
+    return render_template('clustering/cluster_report.html', data=[New_Data.replace(np.nan, '', regex=True).to_html(header="true")],
+                                                             no_components=ComponentsNo, no_clusters=No_Clusters)
 
 ################
 ##  Something ##
 ################
 if __name__ == '__main__':
-    app.run(port = 3000, debug = True)
+    app.run(port = 3000, debug = False)
+    #app.run(port = 3000, debug = True)
 
 """
 @app.route('/balance')
