@@ -4,7 +4,7 @@
 <script>
 function deactivate() {
     //Get checked class id
-    var clas1= document.querySelector('input[name="class"]:checked').id;
+    /*var clas1= document.querySelector('input[name="class"]:checked').id;
     //Change first character
     var feat= "F".concat(clas1.substring(1));
     //Disable feature checkbox
@@ -21,6 +21,27 @@ function deactivate() {
         discheck.disabled= false;
         //Unchecked feature if class is checked
         document.getElementById(feat).checked = false;
+    }*/
+    var sel_clas= document.getElementById("clas");
+    var feat= sel_clas.value;
+    feat2= "F".concat(feat.substring(1));
+    console.log(feat2);
+    var check= document.getElementById(feat2);
+    console.log(check);
+    check.disabled= true;
+    
+    for(var i=1; i < sel_clas.length; i++){
+        trend= sel_clas[i].value;
+        //Change first character of id
+        var feat_i= "F".concat(trend.substring(1));
+        //Enable feature if class is unchecked
+        if(feat_i != feat2){
+            //Enable feature if class is unchecked
+            var discheck= document.getElementById(feat_i);
+            //console.log(discheck);
+            discheck.disabled= false;
+        }
+        
     }
 }
 </script>
@@ -42,13 +63,10 @@ function deactivate() {
         <div class="question">Please select the variable for the class (dependent variable):</div>
         
         <br><div>
-            <center><table id="feats">
-                <!-- Travel through elements, step 3 -->
+            <!-- <center><table id="feats"> 
                 {% for i in range(0, variables|length, 3): %}
                 <tr>
                     <form action="/add_supfeats" method= "POST">
-                    <!-- if there is an element -->
-                    <!-- C in id= class -->
                     <td>{% if variables[i]: %}
                         <input type="radio" name="class" id=C{{variables[i]}} value={{i}} onclick="deactivate()">
                         <label for=C{{variables[i]}}>{{ variables[i] }}</label>
@@ -63,13 +81,20 @@ function deactivate() {
                     {% endif %}</td>
                 </tr>
                 {% endfor %}
-            </table></center>
+            </table> -->
+            <form action="/add_supfeats" method= "POST">
+            <center><select id="clas" name="class" onchange="deactivate();">
+                    <option value="dis" disabled selected>Select the class</option>
+                {% for i in range(0, variables|length): %}
+                    <option value=C{{variables[i]}}>{{ variables[i] }}</option>
+                {% endfor %}
+            </select></center>
         </div>
 
         <br><br><div class="question">Please select the variables for the features (independent variables):</div>
         
         <br><div>
-            <center><table id="feats">
+            <center><table class="feats">
                 <!-- Travel through features, step 3 -->
                 {% for i in range(0, variables|length, 3): %}
                 <tr>

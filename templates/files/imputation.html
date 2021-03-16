@@ -34,15 +34,21 @@
             {% endif %}
 
             <div class="titles">Apply imputation</div>
-            <p class="question">Extra Trees Regressor imputation method will be applied 
-                to the dataset to fill the missing values.</p>
+            
+            <br>
+            <br>
+            <p class="question">Would you like to apply Extra Trees Regressor 
+                imputation method to fill the missing values?</p>
             <br><p>Extremly Randomized Trees (Extra Trees Regressor for short) is an
                 ensemble algorithm of decision trees. Predictions are made by averaging
                 the prediction of the decision trees or by using majority vote, depending 
                 the case. It can achieve a very good performance due to its simple 
                 algorithm to construct the decision trees.</p>
-            
-            <!-- <table class="options">
+            <br><p>If the Extra Trees Regressor method is not applied, 
+                the samples with null values ​​will be removed.</p>
+
+            <br>
+            <table class="options">
                 <tr>
                     <form action="/add_imput" method= "POST">
                     <td><br><input type="radio" name="imputation" id="apply" value="1">
@@ -50,7 +56,7 @@
                     <td><br><input type="radio" name="imputation" id="not" value="0">
                         <label for="not">Not apply</label></td>
                 </tr>
-            </table> -->
+            </table>
             <form action="/add_imput" method= "POST">
             <br><center><div id="upl"><br><button onclick="$('#parent-load').show();">Next</button></center>
             </form>

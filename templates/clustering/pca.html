@@ -16,29 +16,41 @@
         <p>Principal Component Analysis (PCA) is used for data reduction. It
             aims to reduce a large number of variables to a (much) smaller
             number while losing as little information as possible. The 
-            following {{ no_components }} principal components were generated 
-            using Eigenvalues greater than 1:</p>
+            following {{ no_components }} principal components were generated:</p>
             
-            <center><br>Component loadings
-            <!-- <div class="row"> -->
-                {% for comp in components: %}
-                    {{ comp|safe }}
-                {% endfor %}
-            <!-- </div> -->
+        <center><br>Component loadings
+        <div style="width:90vw; height:62.5vh; overflow:auto; font-size: 15px;">
+        {% for comp in components: %}
+            {{ comp|safe }}
+        {% endfor %}
+        </div>
         
         <br>Summary
-        <!-- <div class="row"> -->
+        <div style="width:60vw; height:62.5vh; overflow:auto; font-size: 15px;">
             {% for sum in summary: %}
                 {{ sum|safe }}
             {% endfor %}
-        <!-- </div> -->
+        </div>
         
-        <br>The {{ '%0.2f'|format(cum_var) }}% of all data is explained in the previous components (whose eigenvalues are greather than 1), 
-            however, you can see the explained variance of all components in this bar graph.
+        <br>
+        <br>You can see the explained variance of each component in this bar graph.
+        
         <br><br>
         <img src="/bar.png" alt="my plot" width="600vw">
+        
+        <br><br><br>
+        <p class="question">Select the number of principal components to use:</p>
+        <form action="/add_pca" method= "POST">
+        
+        <br>
+        <select id="pcnumber" name="pcnumber"> 
+            {% for no in range(no_components): %}
+                <option value={{no+1}}>{{ no+1 }}</option>
+            {% endfor %}
+        </select>
 
-        <br><form action="/add_pca" method= "POST">
+        <br>
+        <br>
             <div id="upl"><br><button>Next</button></center>
         </form>
     </div>    

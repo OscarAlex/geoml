@@ -22,8 +22,9 @@ function testing(){
 <div class="container">
     <div id="choose-learning" data-tab-content>
         <div class="titles">Split the data</div>
-        <p>Select the percentage to be used in the training set:</p>
+        <p class="question">Select the percentage to be used in the training set:</p>
 
+        <br>
         <br><table class="options">
             <tr>
                 <td><b>Training percentage</b></td>
@@ -31,7 +32,7 @@ function testing(){
             </tr>
             <tr>
                 <form action="/add_split" method= "POST">
-                <td><!-- <label for="train">Select:</label> -->
+                <td>
                     <select id="train" name="train" onclick="testing()">
                       <option value="70">70</option>
                       <option value="75">75</option>
@@ -47,6 +48,8 @@ function testing(){
                 </script></td>
             </tr>
         </table>
+
+        <br>
         <br><center><div id="upl"><br><button onclick="$('#parent-load').show();">Train and evaluate</button></center>
         </form>
         <div id="parent-load" style="display:none;">

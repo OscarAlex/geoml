@@ -59,13 +59,14 @@ footer{
 }
 
 .titles{
-    font-size: 25px;
+    font-size: 30px;
     font-weight: bold;
     text-align: center;
     padding: 30px;
 }
 
 .question{
+    font-size: 22px;/**/
     font-weight: bold;
     text-align: center;
 }
@@ -144,43 +145,73 @@ button, input[type="file"], select, select option{
     width: 7%;
 }*/
 
-
+/* Tables */
 .options{
     width: 100%;
     text-align: center;
-    border: 1px solid black;
 }
 
-th, td{
-    width: 80px;
-    padding: 10px 20px;
-    border: 1px solid black;
-    /*white-space:nowrap;*/
+#learn td{
+    padding: 0.8rem;
+    text-align: center;
 }
 
-table{
-    border: 1px solid black;
-    width: fit-content;
-}
-
-table td{
-    /*width: fit-content;*/
-}
-
-table#feats{
-    width: 85vw;
+table.feats{
+    width: 80vw;
     text-align: left;
-    padding: 0px;
-    /*border-collapse:collapse*/
+    border: 2px solid black;
+    border-collapse:collapse
 }
 
-table#feats td{
+table.feats td{
     width: 33%;
+    border: 2px solid black;
+    padding: 0.6rem;
 }
 
-td input{
-    height: 15px;
-    width: 15px;
+table.other{
+    width: fit-content;
+    border: 2px solid black;
+    white-space:nowrap;
+    text-align: left;
+    border-collapse:collapse
+}
+
+table.other td, th{
+    width: fit-content;
+    border: 2px solid black;
+    padding: 0.6rem;
+}
+
+table.table_report{
+    border: 2px solid black;
+    white-space:nowrap;
+    text-align: left;
+    border-collapse:collapse
+}
+
+table.table_report td{
+    width: fit-content;
+    border: 2px solid black;
+    padding: 0.6rem;
+}
+
+#import_table{
+    width: fit-content;
+    border: 2px solid black;
+    white-space:nowrap;
+    text-align: left;
+    border-collapse:collapse;
+}
+
+#import_table{
+    top: 50%;
+}
+
+#import_table td{
+    border: 2px solid black;
+    width: fit-content;
+    padding: 0.6rem;
 }
 
 /* Loading screen */
@@ -234,8 +265,4 @@ hr{
     padding: 0 10px;
     text-align: justify;
     position: relative;
-}
-
-#import_table{
-    top: 50%;
 }
