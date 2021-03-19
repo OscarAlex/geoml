@@ -40,8 +40,11 @@
                 </tr>
                 {% endfor %}
             </table>
-            <br><div id="upl"><br><button>Next</button></center>
+            <br><div id="upl"><br><button onclick="$('#parent-load').show();">Next</button></center>
             </form>
+            <div id="parent-load" style="display:none;">
+                <div id="loading"><img src="../static/img/loading-3.gif" alt="Loading" width="70%" height="70%" /></div>
+            </div>
         </div>
     </div>    
 </div>

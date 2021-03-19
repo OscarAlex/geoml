@@ -1,0 +1,36 @@
+{% extends 'layout.html' %}
+
+{% block body %}
+
+<hr style="height:4px; width:100%">
+<div class="container">
+    <div id="error" data-tab-content>
+        <br>
+        {% if typ=='imp': %}
+        <div class="titles">Your dataset does not contain enough samples: {{ samp_count }} sample(s)</div>
+        
+        <br><br>
+        <p class="question">Add more samples with all its fields filled or 
+                            apply imputation to fill the null values.</p>
+        {% endif %}
+        
+        {% if typ=='train': %}
+        <div class="titles">Your dataset does not contain enough samples for training</div>
+        
+        <br><br>
+        <p class="question">Select other classes with more number of samples.</p>
+        {% endif %}
+
+        {% if typ=='clas': %}
+        <div class="titles">Your new dataset does not contain the right columns for classification</div>
+        
+        <br><br>
+        <p class="question">Make sure your new dataset contains the indicated columns:</p>
+        <br><center><b>{{ feats }}</b></center>
+        {% endif %}
+
+        <br><br><br><br><br><br><br><br>
+    </div>
+</div>
+
+{% endblock %}

@@ -1,6 +1,8 @@
 #Flask
-from flask import Flask, render_template, request, redirect, url_for, flash, send_file, make_response, Response####
+from flask import Flask, render_template, request, redirect, url_for, flash, send_file, make_response, Response
 from werkzeug.utils import secure_filename
+from flask import g, session
+from flask_session import Session
 #Dataframe and arrays
 import pandas as pd
 import numpy as np
@@ -41,6 +43,12 @@ from matplotlib.lines import Line2D
 
 app= Flask(__name__)
 app.secret_key= 'secret'
+
+SESSION_TYPE = 'filesystem'
+app.config.from_object(__name__)
+Session(app)
+
+app.config.update(SESSION_COOKIE_SAMESITE=None, SESSION_COOKIE_SECURE=True)
 
 ###############
 ## Variables ##
@@ -110,9 +118,8 @@ Cluster_Data= pd.DataFrame()
 def getFile(fileLoaded):
     #fileLoaded.save(secure_filename(fileLoaded.filename))
     #Get file name
-    global Filename
-    Filename= fileLoaded.filename
-    Filename= Filename.replace('.csv', '')
+    session['Filename']= fileLoaded.filename
+    session['Filename']= session['Filename'].replace('.csv', '')
     #Get file
     #fileSaved= fileLoaded.filename
     df= pd.read_csv(fileLoaded)
@@ -120,6 +127,7 @@ def getFile(fileLoaded):
     df= df.dropna(how='all').reset_index().drop('index', axis=1)
     #Drop completely empty columns
     df= df.dropna(axis='columns', how='all')
+
     return df
 
 #Impute data
@@ -140,13 +148,11 @@ def imputData(data):
                 dframe= dframe.drop(columns=objectsName[-1])
         #Get numeric columns
         dframeName= list(dframe.columns)
+
         return dframeName, dframe, objectsName, objects
 
     w, x, y, z= splitTypes(data)
-    print(w)
-    print(x)
-    print(y)
-    print(z)
+
     #Extra Tree Regressor
     impute_est= ETR(n_estimators=10, random_state=0)
     #Iterative imputer
@@ -157,7 +163,7 @@ def imputData(data):
     imp_data= pd.concat([pd.DataFrame(impdf), z], axis=1)
     #Rename columns
     imp_data.columns= w + y
-    #Return imputed data
+    
     return imp_data
 
 #Normalize dataframe
@@ -173,7 +179,7 @@ def normalizeDf(dframe):
     norm_values= preprocessing.normalize(dframe.to_numpy())
     #Normalized values to dataframe
     norm_df= pd.DataFrame(data=norm_values, columns=original_dframe_cols)
-    
+
     return norm_df, original_dframe_values, original_dframe_cols
 
 ###############
@@ -188,60 +194,40 @@ def Info():
 ###############
 @app.route('/')
 def Index():
-    global emptyCols
     #Reset the variable in case of return
-    emptyCols= ''
+    #session['emptyCols']= ''
     return render_template('files/index.html')
 
 @app.route('/add_csv', methods=['POST'])
 def ADD_CSV():
     if request.method == 'POST':
-        """try:
-            #Load file
-            fileLoaded= request.files['file']
-            
-            global Data
-            Data= getFile(fileLoaded)
-
-            #Treeshold if NaN
-            df= list(Data.loc[:, Data.isnull().mean() < .9].columns)
-            print(Data)
-            print(list(Data.columns))
-            print(df)
-            #If many NaNs, get the columns name
-            if(list(Data.columns) != df):
-                print("Hay columnas vacías")
-                global emptyCols
-                #Get the columns
-                cols= list(set(Data) - set(df))
-                emptyCols= ', '.join(cols)
-                print(emptyCols)
-            return redirect(url_for('Imput'))
-        except:
-            flash('This message will not show')
-            return redirect(url_for('Index'))"""
-        
         #Load file
         fileLoaded= request.files['file']
-        print('fileLoaded#####################')
-        print(fileLoaded)
 
-        global Data
-        Data= getFile(fileLoaded)
+        #global Data
+        data= getFile(fileLoaded)
+        #Convert to dict
+        dict_obj = data.to_dict('list')
+        #sessions['data'] = dict_obj
 
+        session['Original_data']= dict_obj
+        #session.modified = True
+        print('session')
+        print(session['Original_data'])
+        
         #Treeshold if NaN
-        df= list(Data.loc[:, Data.isnull().mean() < .9].columns)
-        print(Data)
-        print(list(Data.columns))
-        print(df)
+        df= list(data.loc[:, data.isnull().mean() < .9].columns)
+        print('Data')
+        print(data)
+        session['emptyCols']= ''
         #If many NaNs, get the columns name
-        if(list(Data.columns) != df):
+        if(list(data.columns) != df):
             print("Hay columnas vacías")
-            global emptyCols
             #Get the columns
-            cols= list(set(Data) - set(df))
-            emptyCols= ', '.join(cols)
-            print(emptyCols)
+            cols= list(set(data) - set(df))
+            session['emptyCols']= ', '.join(cols)
+            print(session['emptyCols'])
+
         return redirect(url_for('Imput'))
         
 
@@ -251,18 +237,18 @@ def ADD_CSV():
 @app.route('/imputation')
 def Imput():
     #Copy dataset when refresh page in case of return
-    Imput.data= Data.copy()
-    return render_template('files/imputation.html', emptyCols=emptyCols)
+    #Imput.data= get_Data().copy()
+    return render_template('files/imputation.html', emptyCols=session['emptyCols'])
 
 @app.route('/add_imput', methods=['POST'])
 def ADD_Imput():
     if request.method == 'POST':
         #Copy dataset to use locally
-        Imput()
-        data= Imput.data.copy()
+        dict_obj= session['Original_data'] if 'Original_data' in session else ""
+        data = pd.DataFrame(dict_obj)
 
         #Keep/remove empty columns if exist    
-        if emptyCols:
+        if session['emptyCols']:
             try:
                 keep= request.form['empty']
             except:
@@ -284,15 +270,22 @@ def ADD_Imput():
         else:
             #Remove rows with null values
             imp_data= data.dropna()
+        
+        print('ROWS', len(imp_data))
+        if(len(imp_data) < 50):
+            return render_template('samples_error.html', samp_count=len(imp_data), typ='imp')
 
-        global Imputation
-        global Imputed_Data
-        global Imputed_Data_Cols
-        Imputation= imputation
-        Imputed_Data= imp_data.copy()
-        Imputed_Data_Cols= list(Imputed_Data.columns)
-        print('Datos sin null values')
-        print(Imputed_Data)
+        print('IMP DATA')
+        print(imp_data)
+
+        session['Imputation']= imputation
+
+        #Convert to dict
+        dict_obj = imp_data.to_dict('list')
+
+        session['Imputed_data']= dict_obj
+        session['Imputed_data_cols']= list(imp_data.columns)
+
         return redirect(url_for('Learning'))
 
 ################
@@ -301,7 +294,7 @@ def ADD_Imput():
 @app.route('/learning')
 def Learning():
     #Copy dataset when refresh page in case of return
-    Learning.data= Imputed_Data.copy()
+    #Learning.data= session['Imputed_data']
     return render_template('files/learning.html')
 
 @app.route('/choose_learn', methods=['POST'])
@@ -324,17 +317,13 @@ def Choose_Learning():
 @app.route('/supfeatures')
 def SupFeats():
     #Copy dataset when refresh page in case of return
-    SupFeats.data= Imputed_Data.copy()
-    return render_template('classification/supfeatures.html', variables=Imputed_Data_Cols)
-
+    return render_template('classification/supfeatures.html', variables=session['Imputed_data_cols'])
 
 @app.route('/add_supfeats', methods=['POST'])
 def ADD_SupFeats():
     if request.method == 'POST':
         #Copy dataset to use locally
-        SupFeats()
-        data= SupFeats.data.copy()
-        
+        data = pd.DataFrame(session['Imputed_data'])
         try:
             #Get class selected
             cl= str(request.form['class'])
@@ -358,32 +347,18 @@ def ADD_SupFeats():
         sel_data= pd.concat([sel_data, clas], axis=1)
 
         print(sel_data)
-        global Samples_Count
         #Count samples per class and convert to list with indexes
-        Samples_Count= clas.value_counts().reset_index().values.tolist()
-        
-        #Sort samples
-        Samples_Count.sort(key=lambda x: -x[1])
-        print(Samples_Count)
-        """
-        samples= [sample[1] for sample in Samples_Count]
-        Q1 = np.percentile(samples, 25, interpolation = 'midpoint')  
-        Q2 = np.percentile(samples, 50, interpolation = 'midpoint')  
-        Q3 = np.percentile(samples, 75, interpolation = 'midpoint')  
-        IQR = Q3 - Q1  
-        low_lim = Q1 - 1.5 * IQR 
-        up_lim = Q3 + 1.15 * IQR 
+        samples_count= clas.value_counts().reset_index().values.tolist()
 
-        outlier =[] 
-        for x in samples: 
-            if ((x> up_lim) or (x<low_lim)): 
-                outlier.append(x) 
-        print('Outlier in the dataset is', outlier)
-        """
-        global Selected_Data
-        Selected_Data= sel_data.copy()
-        print(Selected_Data)
-        #print(Samples_Count)
+        #Sort samples
+        samples_count.sort(key=lambda x: -x[1])
+        session['Samples_count']= samples_count
+        
+        #Convert to dict
+        dict_obj = sel_data.to_dict('list')
+        session['Selected_data']= dict_obj
+        session['aux']= session['Selected_data']
+
         return redirect(url_for('Balance'))
 
 ######SUP#######
@@ -392,15 +367,14 @@ def ADD_SupFeats():
 @app.route('/balance')
 def Balance():
     #Copy dataset when refresh page in case of return
-    Balance.data= Selected_Data.copy()
-    return render_template('classification/balance.html', samples=zip(Samples_Count, range(len(Samples_Count))))
+    #Balance.data= Selected_Data.copy()
+    return render_template('classification/balance.html', samples=zip(session['Samples_count'], range(len(session['Samples_count']))))
 
 @app.route('/add_balance', methods=['POST'])
 def ADD_Balance():
     if request.method == 'POST':
         #Copy dataset to use locally
-        Balance()
-        data= Balance.data.copy()
+        data = pd.DataFrame(session['aux'])
 
         #Get classes selected
         cl= request.form.getlist('classes')
@@ -415,13 +389,13 @@ def ADD_Balance():
             return render_template('form_error.html')
 
         #Sort according to Samples_Count
-        sorted_classes= [i[0] for i in Samples_Count]
+        sorted_classes= [i[0] for i in session['Samples_count']]
         splits.sort(key=lambda x: sorted_classes.index(x[0]))
         #Get selected classes
         selected_splits= [splits[i] for i in cl]
         
         global Selected_Classes
-        Selected_Classes= ', '.join(str(classes[0]) for classes in selected_splits)
+        session['Selected_classes']= ', '.join(str(classes[0]) for classes in selected_splits)
 
         try:
             #Get if apply upsampling
@@ -445,9 +419,12 @@ def ADD_Balance():
                 final_data= pd.concat([final_data, split[1]])
             data= final_data
 
-        global Selected_Data
-        Selected_Data= data.copy()
-        print(Selected_Data)
+        if(len(data) < 50):
+            return render_template('samples_error.html', typ='train')
+        
+        #Convert to dict
+        dict_obj = data.to_dict('list')
+        session['Selected_data']= dict_obj#.copy()
 
         return redirect(url_for('Split'))
 
@@ -457,15 +434,14 @@ def ADD_Balance():
 @app.route('/split')
 def Split():
     #Copy dataset when refresh page in case of return
-    Split.data= Selected_Data.copy()
+    #Split.data= Selected_Data.copy()
     return render_template('classification/split.html')
 
 @app.route('/add_split', methods=['POST'])
 def ADD_Split():
     if request.method == 'POST':
         #Copy dataset to use locally
-        Split()
-        data= Split.data.copy()
+        data = pd.DataFrame(session['Selected_data'])
 
         #Get percentage of training set
         train= request.form['train']
@@ -588,13 +564,11 @@ def ADD_Split():
                 #Sort accuracies
                 sorted_accs= sorted(accs.items(), key=lambda x: -x[1])
                 
-                global Best_Model_Name
-                global Best_Model
                 #Get best model name
                 best_model_name= sorted_accs[0][0]
-                Best_Model_Name= best_model_name
-                #Get best model                
-                Best_Model.append(models.get(best_model_name))
+                #Get best model
+                session['Best_model']= []
+                session['Best_model'].append(models.get(best_model_name))
 
                 #Feature importance
                 #Importance of dataframe
@@ -630,28 +604,28 @@ def ADD_Split():
                 calcFeatImp(fitted_dt)
                 #calcFeatImp(fitted_rf)
                 
-                global Best_Acc
-                global Best_Metric
-                global Best_Import
+                session['Best_import']= []
                 #If best model is a tree
                 if (best_model_name == dt_name): #or (best_model_name == rf_name):
-                    Best_Acc= accs_trees.get(best_model_name)
+                    session['Best_acc']= accs_trees.get(best_model_name)
                     accs_trees.pop(best_model_name)
 
-                    Best_Metric= reports_trees.get(best_model_name)
+                    session['Best_metric']= reports_trees.get(best_model_name)
                     reports_trees.pop(best_model_name)
 
-                    Best_Import= importances.get(best_model_name)
+                    session['Best_import']= importances.get(best_model_name)
                     importances.pop(best_model_name)
+                
                 #If best model is not a tree
                 else:
-                    Best_Acc= accs.get(best_model_name)
+                    session['Best_acc']= accs.get(best_model_name)
                     accs.pop(best_model_name)
 
-                    Best_Metric= reports.get(best_model_name)
+                    session['Best_metric']= reports.get(best_model_name)
                     reports.pop(best_model_name)
 
-                #Return dictionaries
+                session['Best_model_name']= best_model_name
+                
                 return accs, reports, accs_trees, reports_trees, importances, defs#, best_model_name
         
         #Create Classifications object
@@ -659,28 +633,19 @@ def ADD_Split():
         #Get the results of train and evaluate the classifiers
         models_metrics= class_model.results(x_tr, y_tr, x_tst, y_tst)
         
-        global Accuracies
-        global Metrics
-        global Accuracies_Trees
-        global Metrics_Trees
-        global Importances
-        global Definitions
-
         #Get accuracies
-        Accuracies= models_metrics[0]
+        session['Accuracies']= models_metrics[0]
         #Get the metrics of the classifiers
-        Metrics= models_metrics[1]
-        print(Metrics)
+        session['Metrics']= models_metrics[1]
 
         #Get accuracies trees
-        Accuracies_Trees= models_metrics[2]
+        session['Accuracies_trees']= models_metrics[2]
         #Get the metrics of the classifiers
-        Metrics_Trees= models_metrics[3]
-        print(Metrics)
+        session['Metrics_trees']= models_metrics[3]
         #Get the importance of the features
-        Importances= models_metrics[4]
+        session['Importances']= models_metrics[4]
         #Get the definitions of the classifiers
-        Definitions= models_metrics[5]
+        session['Definitions']= models_metrics[5]
 
         return redirect(url_for('Classification'))
 
@@ -689,19 +654,19 @@ def ADD_Split():
 ################
 @app.route('/class_report')
 def Classification():
-    return render_template('classification/class_report.html', accs=Accuracies, accsList= list(Accuracies.keys()), mets=Metrics, 
-                                                accs_trees=Accuracies_Trees, accsTList= list(Accuracies_Trees.keys()), mets_trees=Metrics_Trees, 
-                                                imps=Importances, defs=Definitions,
-                                                best_acc=Best_Acc, best_met=Best_Metric, best_imp=Best_Import,
-                                                best_name=Best_Model_Name)
+    return render_template('classification/class_report.html', accs=session['Accuracies'], accsList= list(session['Accuracies'].keys()), mets=session['Metrics'], 
+                                                accs_trees=session['Accuracies_trees'], accsTList= list(session['Accuracies_trees'].keys()), mets_trees=session['Metrics_trees'], 
+                                                imps=session['Importances'], defs=session['Definitions'],
+                                                best_acc=session['Best_acc'], best_met=session['Best_metric'], best_imp=session['Best_import'],
+                                                best_name=session['Best_model_name'])
 
 @app.route('/add_report', methods=['POST'])
 def ADD_Report():
     if request.method == 'POST':
         #Selected features
-        global Selected_Data
-        global Selected_Feats
-        Selected_Feats= ', '.join(Selected_Data.columns[:-1])
+        dict_obj= session['Selected_data']
+        session['Selected_feats']= ', '.join(pd.DataFrame(dict_obj).columns[:-1])
+        
         return redirect(url_for('Classify'))
 
 ######SUP#######
@@ -711,7 +676,8 @@ def ADD_Report():
 def Classify():
     #Copy dataset when refresh page in case of return
     #Balance.data= Imputed_Data.copy()
-    return render_template('classification/classify.html', feats=Selected_Feats, classes=Selected_Classes, model=Best_Model_Name)
+    return render_template('classification/classify.html', feats=session['Selected_feats'], 
+                            classes=session['Selected_classes'], model=session['Best_model_name'])
 
 @app.route('/add_classify', methods=['POST'])
 def ADD_Classify():
@@ -719,19 +685,21 @@ def ADD_Classify():
         #Load file
         fileLoaded= request.files['file']
         #Get file name
-        global Filename
-        Filename= fileLoaded.filename
-        Filename= Filename.replace('.csv', '')
+        session['Filename']= fileLoaded.filename
+        session['Filename']= session['Filename'].replace('.csv', '')
 
         #File to csv
         data= getFile(fileLoaded)
         #Order columns
-        global Selected_Data
-        data= data[Selected_Data.columns[:-1]]
+        dict_obj= session['Selected_data']
+        sel_data= pd.DataFrame(dict_obj)
+        try:
+            data= data[sel_data.columns[:-1]]
+        except:
+            return render_template('samples_error.html', typ='clas', feats=session['Selected_feats'])
 
         #Imputation
-        global Imputation
-        if Imputation == '1':
+        if session['Imputation'] == '1':
             #Imputate data
             data= imputData(data)
         else:
@@ -740,12 +708,11 @@ def ADD_Classify():
         #Normalize
         norm_data, dframe_vals, dframe_cols= normalizeDf(data)
 
-        global Best_Model
         #Add new column with the predictions
-        data[Selected_Data.columns[-1]]= Best_Model[0].predict(norm_data)
+        data[sel_data.columns[-1]]= session['Best_model'][0].predict(norm_data)
         #Probabilities of classification
-        probabilities= Best_Model[0].predict_proba(norm_data[norm_data.columns])
-        #print(probabilities)
+        probabilities= session['Best_model'][0].predict_proba(norm_data[norm_data.columns])
+        
         #Add new column with the probabilities of classifications
         data['proba']= np.array([max(x) for x in probabilities])
         #Index start with 1
@@ -753,9 +720,9 @@ def ADD_Classify():
         #Round 2 decimals
         data= data.round(decimals=2)
 
-        global New_Data
-        New_Data= data.copy()
-        #print(New_Data)
+        #Convert to dict
+        dict_obj = data.to_dict('list')
+        session['New_data']= dict_obj
         return redirect(url_for('Results'))
 
 ######SUP#######
@@ -764,20 +731,21 @@ def ADD_Classify():
 @app.route('/results')
 def Results():
     #Copy dataset when refresh page in case of return
-    Balance.data= Imputed_Data.copy()
-    return render_template('classification/results.html', table=[New_Data.replace(np.nan, '', regex=True).to_html(classes='other', header="true")], model=Best_Model_Name)
+    #Balance.data= Imputed_Data.copy()
+    n_data= pd.DataFrame(session['New_data'])
+    return render_template('classification/results.html', table=[n_data.replace(np.nan, '', regex=True).to_html(classes='other', header="true")], 
+                                                          model=session['Best_model_name'])
 
 @app.route('/add_results', methods=['GET'])
 def ADD_Results():
     #Create StringIO
     execel_file= StringIO()
-    global Filename
     #Name of the file
-    filename= "%s.csv" % (Filename + ' - report')
+    filename= "%s.csv" % (session['Filename'] + ' - report')
     
-    global New_Data
     #Dataframe to csv
-    New_Data.to_csv(execel_file, index=False, encoding='utf-8')
+    n_data= pd.DataFrame(session['New_data'])
+    n_data.to_csv(execel_file, index=False, encoding='utf-8')
     #Get dataframe data
     csv_output= execel_file.getvalue()
     #Close
@@ -788,6 +756,7 @@ def ADD_Results():
     resp.headers["Content-Disposition"]= ("attachment; filename=%s" % filename)
     #Csv
     resp.headers["Content-Type"]= "text/csv"
+
     return resp
 
 #####UNSUP######
@@ -796,8 +765,9 @@ def ADD_Results():
 @app.route('/unsupfeatures')
 def UnsupFeats():
     #Copy dataset when refresh page in case of return
-    UnsupFeats.data= Imputed_Data.copy()
-    return render_template('clustering/unsupfeatures.html', features=Imputed_Data_Cols)
+    #UnsupFeats.data= Imputed_Data.copy()
+    imp= pd.DataFrame(session['Imputed_data'])
+    return render_template('clustering/unsupfeatures.html', features=list(imp.columns))
 
 Variance= []
 Final_Variance= ()
@@ -806,8 +776,7 @@ PCA_Transpose= []
 def ADD_UnsupFeats():
     if request.method == 'POST':
         #Copy dataset to use locally
-        UnsupFeats()
-        data= UnsupFeats.data.copy()
+        data= pd.DataFrame(session['Imputed_data'])
 
         #Get features selected
         fe= request.form.getlist('features')
@@ -830,11 +799,8 @@ def ADD_UnsupFeats():
         eigen_values, eigen_vectors= np.linalg.eig(covar_matrix)
         #Eigenvalues greather than one
         #greater_one= sum(1 for i in eigen_values if i > 1)
-        
-        #global ComponentsNo
-        #ComponentsNo= greater_one
 
-        ##############SUMMARY TABLE###############
+        #SUMMARY TABLE
         #Index of eigen values max to min
         ix_ei_vals= np.argsort(eigen_values)[::-1]
         #Sorted variances
@@ -852,16 +818,16 @@ def ADD_UnsupFeats():
     
         #Start index from 1
         summary.index+= 1
+        #Convert to dict
+        dict_obj = summary.to_dict('list')
+        session['Summary']= dict_obj
+        session['ComponentsNo']= len(summary)
 
-        global Summary
-        Summary= summary.copy()
-        global ComponentsNo
-        ComponentsNo= len(summary)
-        ############COMPONENTS TABLE############
+        #COMPONENTS TABLE
         #Columns
         cols= sel_data.columns
         #PCA
-        pca_spon= PCA(n_components=ComponentsNo)
+        pca_spon= PCA(n_components=session['ComponentsNo'])
         #New variables
         prin_spon= pca_spon.fit_transform(scale_df)
         #Component loadings
@@ -872,22 +838,24 @@ def ADD_UnsupFeats():
         #Rename columns
         components= components.rename(columns=lambda x: x+1)
 
-        global Components
-        Components= components.copy()
-        global Comp_Dataset
-        Comp_Dataset= prin_spon.copy()
-        global Selected_Data
-        Selected_Data= sel_data.copy()
-        global PCA_Transpose
-        PCA_Transpose= np.transpose(pca_spon.components_)
-        global Variance
-        Variance= variance_explained
+        #Components
+        dict_obj = components.to_dict('list')
+        session['Components']= dict_obj
+        session['Comp_dataset']= prin_spon
+
+        dict_obj = sel_data.to_dict('list')
+        session['Selected_data']= dict_obj
+        #Array transpose
+        session['PCA_transpose']= np.transpose(pca_spon.components_)
+        #Variance explained
+        session['Variance']= variance_explained
+
         return redirect(url_for('PCAnalysis'))
 
 def create_bar_plot():
     fig, ax= plt.subplots(1, 1)
     #Bar plot 
-    ax.bar(range(1, len(Variance)+1), Variance) 
+    ax.bar(range(1, len(session['Variance'])+1), session['Variance']) 
     #Remove axes splines 
     for s in ['top', 'bottom', 'left', 'right']: 
         ax.spines[s].set_visible(False) 
@@ -899,7 +867,7 @@ def create_bar_plot():
     ax.yaxis.set_tick_params(pad = 10) 
     #Add annotation to bars
     rects= ax.patches
-    for i, v in zip(rects, Variance):
+    for i, v in zip(rects, session['Variance']):
         height= i.get_height()
         ax.text(i.get_x()+i.get_width()/2, height+2, (str(round(v,2))+'%'),
                 ha='center', va='bottom', fontsize=7, rotation=90)
@@ -907,6 +875,7 @@ def create_bar_plot():
     ax.set_title('Components variances\n') 
     ax.set_xlabel('Components') 
     ax.set_ylabel('Data percentage')
+
     return fig
 
 @app.route('/bar.png')
@@ -914,6 +883,7 @@ def bar_png():
     fig= create_bar_plot()
     output= io.BytesIO()
     FigureCanvas(fig).print_png(output)
+
     return Response(output.getvalue(), mimetype='image/png')
 
 #####UNSUP######
@@ -922,114 +892,76 @@ def bar_png():
 @app.route('/pca')
 def PCAnalysis():
     #Copy dataset when refresh page in case of return
-    Balance.data= Imputed_Data.copy()
-    return render_template('clustering/pca.html', summary=[Summary.to_html(classes='other', header="true")], #cum_var= Final_Variance,
-                                                  components=[Components.to_html(classes='other', header="true")],
-                                                  no_components=ComponentsNo)
-                                                  
-PCA_Labeled= pd.DataFrame()
-No_Clusters= ()
-Sel_Components= ()
+    summ= pd.DataFrame(session['Summary'])
+    comp= pd.DataFrame(session['Components'])
+    return render_template('clustering/pca.html', summary=[summ.to_html(classes='other', header="true")], #cum_var= Final_Variance,
+                                                  components=[comp.to_html(classes='other', header="true")],
+                                                  no_components=session['ComponentsNo'])
+
 @app.route('/add_pca', methods=['POST'])
 def ADD_PCA():
     if request.method == 'POST':
-        
         try:
             #Get number of components
             components= int(request.form['pcnumber'])
         except:
             return render_template('form_error.html')
         
-        global Sel_Components
-        Sel_Components= components
+        session['Sel_components']= components
 
         ks= range(1, 10)
         inertias= []
-        global Comp_Dataset
+        comp_data= session['Comp_dataset']
+
         for k in ks:
-            # Create a KMeans instance with k clusters: model
+            #Create a KMeans instance with k clusters: model
             model= KMeans(n_clusters=k)
-            # Fit model to samples
-            model.fit(Comp_Dataset[:,0:components])
-            # Append the inertia to the list of inertias
+            #Fit model to samples
+            model.fit(comp_data[:,0:components])
+            #Append the inertia to the list of inertias
             inertias.append(model.inertia_)
 
         kl= KneeLocator(ks, inertias, curve="convex", direction="decreasing")
-        kmeans= KMeans(n_clusters=kl.elbow).fit(Comp_Dataset)
-        labels= kmeans.predict(Comp_Dataset)
+        kmeans= KMeans(n_clusters=kl.elbow).fit(comp_data)
+        labels= kmeans.predict(comp_data)
 
-        global Imputed_Data
-        global Selected_Data
-        global PCA_Labeled
-        global No_Clusters
+        imp_data= pd.DataFrame(session['Imputed_data'])
+        sel_data= pd.DataFrame(session['Selected_data'])
 
-        data_labeled= Imputed_Data[Selected_Data.columns]
-        print(len(labels))
+        data_labeled= imp_data[sel_data.columns]
         print(data_labeled)
         data_labeled['cluster']= [x+1 for x in labels]
-        PCA_Labeled= data_labeled.copy()
-        No_Clusters= kl.elbow
+        
+        dict_obj = data_labeled.to_dict('list')
+        session['PCA_labeled']= dict_obj
+        session['No_clusters']= kl.elbow
 
         data_labeled= data_labeled.sort_values('cluster')
-        print(data_labeled)
-        
-        global New_Data
-        New_Data= data_labeled.copy()
+        session['New_data'] = data_labeled.to_dict('list')
+
         return redirect(url_for('ClusterReport'))
 
 
 def create_pc_plot():
-    global Sel_Components
-    global PCA_Transpose
-    global PCA_Labeled
-    global Selected_Data
-    global Comp_Dataset
-    global No_Clusters
-    
-    trans= PCA_Transpose[:,0:Sel_Components].copy()
-    data_labeled= PCA_Labeled.copy()
+    comp_data= pd.DataFrame(session['Comp_dataset'])
+    trans= session['PCA_transpose'][:,0:session['Sel_components']]
+    data_labeled= pd.DataFrame(session['PCA_labeled'])
     n= trans.shape[0]
-    df= pd.DataFrame(data=Comp_Dataset)
+    df= pd.DataFrame(data=comp_data)
     
-    fig, ax = plt.subplots(nrows=Sel_Components, ncols=Sel_Components, figsize=(Sel_Components*4, Sel_Components*4))#, constrained_layout=True)
-    plt.subplots_adjust(hspace=Sel_Components*0.075, wspace=Sel_Components*0.075, left=0.1, right=0.9, top=0.9, bottom=0.1)
-    #fig.tight_layout()
-    #plt.figure(figsize=(Sel_Components*5, Sel_Components*5))
-    #plt.subplots_adjust(hspace=0.25, wspace=0.25)
+    fig, ax = plt.subplots(nrows=session['Sel_components'], ncols=session['Sel_components'], figsize=(session['Sel_components']*4, session['Sel_components']*4))#, constrained_layout=True)
+    plt.subplots_adjust(hspace=session['Sel_components']*0.075, wspace=session['Sel_components']*0.075, left=0.1, right=0.9, top=0.9, bottom=0.1)
+    
     cmap= plt.cm.get_cmap('viridis')
-    my_legend = []
-    num_clusters= No_Clusters
+    my_legend= []
+    num_clusters= session['No_clusters']
     for i in range(num_clusters):
         my_legend.append(Line2D([0], [0], lw=0, marker="o", color=cmap(1/(num_clusters-1)*i), label="Cluster {0}".format(i+1)))
 
-    """for i in range(Sel_Components):
-        for j in range(Sel_Components):
-            if i == j:
-                continue
-    
-    fig = Figure(figsize=(10, 10))
-    axis = fig.add_subplot(1, 1, 1)
+    sel_data= pd.DataFrame(session['Selected_data'])
 
-    xs= df[i]
-    ys= df[j]
-    
-    scalex = 1.0/(xs.max() - xs.min())
-    scaley = 1.0/(ys.max() - ys.min())
-    axis.scatter(xs*scalex, ys*scaley, c=data_labeled['cluster'], label=data_labeled['cluster'])
-    #plt.scatter(xs*scalex, ys*scaley, c=data_labeled['labels'])#, marker=".")
-    for k in range(n):
-        axis.arrow(0, 0, trans[k,i], trans[k,j], head_width= 0.02, head_length= 0.04, color= 'r', alpha= 0.5)
-        axis.text(trans[k,i]* 1.15, trans[k,j] * 1.15, df.columns[k], color = 'g', ha = 'center', va = 'center')"""
-    #fig.xlabel('PCA '+str(i+1))
-    #fig.ylabel('PCA '+str(j+1))
-    #plt.xlim(-1,1)
-    #plt.ylim(-1, 1)
-    #fig.legend(handles=my_legend)
-    #fig.grid(True)
-    #plt.show()
-
-    for i in range(Sel_Components):
-        for j in range(Sel_Components):
+    for i in range(session['Sel_components']):
+        for j in range(session['Sel_components']):
             #if(i != j):
             #ax.subplot(Sel_Components, Sel_Components, i*Sel_Components+j+1)
             #df= pd.DataFrame(data=Comp_Dataset, columns=[i, j])
@@ -1043,13 +975,13 @@ def create_pc_plot():
             ax[i,j].scatter(xs*scalex, ys*scaley, c=data_labeled['cluster'], label=data_labeled['cluster'])
             for k in range(n):
                     ax[i,j].arrow(0, 0, trans[k,i], trans[k,j], head_width=0.02, head_length=0.04, color='r', alpha= 0.5)
-                    ax[i,j].text(trans[k,i]*1.15, trans[k,j]*1.15, Selected_Data.columns[k], color='g', ha='center', va='center')
+                    ax[i,j].text(trans[k,i]*1.15, trans[k,j]*1.15, sel_data.columns[k], color='g', ha='center', va='center')
                     #Remove x, y ticks 
                     ax[i,j].xaxis.set_ticks_position('none') 
                     ax[i,j].yaxis.set_ticks_position('none')
                     #ax.set_xlim(-1,1)
                     #ax.set_ylim(-1, 1)
-            fig.suptitle('Principal Components and Clusters\n', fontsize=Sel_Components*7)
+            fig.suptitle('Principal Components and Clusters\n', fontsize=session['Sel_components']*7)
             ax[i,j].set_xlabel("PC "+str(i+1))
             ax[i,j].set_ylabel("PC "+str(j+1))
             ax[i,j].legend(handles=my_legend)
@@ -1065,13 +997,6 @@ def plot_png():
         
     return Response(output.getvalue(), mimetype='image/png')
 
-"""@app.route('/plot.png')
-def plot_png():
-    fig= create_pc_plot()
-    output= io.BytesIO()
-    FigureCanvas(fig).print_png(output)
-    return Response(output.getvalue(), mimetype='image/png')"""
-
 #####UNSUP######
 ##Clust report##
 ################
@@ -1079,8 +1004,9 @@ def plot_png():
 def ClusterReport():
     #Copy dataset when refresh page in case of return
     #Balance.data= Imputed_Data.copy()
-    return render_template('clustering/cluster_report.html', data=[New_Data.replace(np.nan, '', regex=True).to_html(classes='other', header="true")],
-                                                             no_components=Sel_Components, no_clusters=No_Clusters)
+    n_data= pd.DataFrame(session['New_data'])
+    return render_template('clustering/cluster_report.html', data=[n_data.replace(np.nan, '', regex=True).to_html(classes='other', header="true")],
+                                                             no_components=session['Sel_components'], no_clusters=session['No_clusters'])
 
 ################
 ##  Something ##
