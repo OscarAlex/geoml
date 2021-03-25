@@ -118,6 +118,10 @@ p{
     cursor: pointer;
 }
 
+.plot{
+    cursor: pointer;
+}
+
 .tab.pass{
     background-color: rgba(180, 88, 60, 0.705);
     cursor: pointer;

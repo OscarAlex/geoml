@@ -1,5 +1,5 @@
 #Flask
-from flask import Flask, render_template, request, redirect, url_for, flash, send_file, make_response, Response
+from flask import Flask, render_template, request, redirect, url_for, send_file, make_response, Response
 from werkzeug.utils import secure_filename
 from flask import g, session
 from flask_session import Session
@@ -22,7 +22,7 @@ from sklearn.linear_model import LogisticRegression
 from sklearn.svm import SVC
 from sklearn.neural_network import MLPClassifier
 from sklearn.tree import DecisionTreeClassifier
-from sklearn.ensemble import RandomForestClassifier
+#from sklearn.ensemble import RandomForestClassifier
 #Metrics
 from sklearn import metrics
 from sklearn.metrics import classification_report
@@ -35,7 +35,7 @@ from io import StringIO
 from sklearn.decomposition import PCA
 from kneed import KneeLocator
 from sklearn.cluster import KMeans
-
+#Plots
 from matplotlib.backends.backend_agg import FigureCanvasAgg as FigureCanvas
 from matplotlib.figure import Figure
 import matplotlib.pyplot as plt
@@ -49,67 +49,6 @@ app.config.from_object(__name__)
 Session(app)
 
 app.config.update(SESSION_COOKIE_SAMESITE=None, SESSION_COOKIE_SECURE=True)
-
-###############
-## Variables ##
-###############
-#Empty columns before imputing
-emptyCols= ''
-#Filename
-Filename= ''
-
-#Imputation
-Imputation= '0'
-#Imputed dataset
-Imputed_Data= pd.DataFrame()
-
-#Dataset columns
-Imputed_Data_Cols= []
-#Dataset file
-Data= pd.DataFrame()
-
-#####Classification#####
-#Selected features
-Selected_Data= pd.DataFrame()
-#Samples per class
-Samples_Count= []
-
-#Selected classes to use
-Selected_Classes= ''
-
-#Dictionaries for classification
-Accuracies= {}
-Metrics= {}
-Accuracies_Trees= {}
-Metrics_Trees= {}
-Importances= {}
-Definitions= {}
-Best_Model= []
-Best_Model_Name= ''
-Best_Acc= []
-Best_Metric= []
-Best_Import= []
-
-#Selected features
-Selected_Feats= ''
-
-#Samples to classify
-New_Data= pd.DataFrame()
-
-#Cumulative variance dataframe
-Cum_Variance= pd.DataFrame()
-#Summary dataframe
-Summary= pd.DataFrame()
-#Components dataframe
-Components= pd.DataFrame()
-#Number of components
-ComponentsNo= ()
-#Components dataset
-Comp_Dataset= []
-
-#####Clusters#####
-#Labeled data
-Cluster_Data= pd.DataFrame()
 
 ###############
 ## Functions ##
@@ -183,6 +122,13 @@ def normalizeDf(dframe):
     return norm_df, original_dframe_values, original_dframe_cols
 
 ###############
+##  Default  ##
+###############
+@app.errorhandler(Exception)
+def all_exception_handler(error):
+   return render_template('default_error.html'), 500
+
+###############
 ##   Info    ##
 ###############
 @app.route('/info')
@@ -194,8 +140,6 @@ def Info():
 ###############
 @app.route('/')
 def Index():
-    #Reset the variable in case of return
-    #session['emptyCols']= ''
     return render_template('files/index.html')
 
 @app.route('/add_csv', methods=['POST'])
@@ -203,17 +147,16 @@ def ADD_CSV():
     if request.method == 'POST':
         #Load file
         fileLoaded= request.files['file']
-
-        #global Data
-        data= getFile(fileLoaded)
+        
+        try:
+            data= getFile(fileLoaded)
+        except:
+            return render_template('form_error.html')
+        
         #Convert to dict
         dict_obj = data.to_dict('list')
-        #sessions['data'] = dict_obj
-
         session['Original_data']= dict_obj
         #session.modified = True
-        print('session')
-        print(session['Original_data'])
         
         #Treeshold if NaN
         df= list(data.loc[:, data.isnull().mean() < .9].columns)
@@ -222,7 +165,6 @@ def ADD_CSV():
         session['emptyCols']= ''
         #If many NaNs, get the columns name
         if(list(data.columns) != df):
-            print("Hay columnas vacías")
             #Get the columns
             cols= list(set(data) - set(df))
             session['emptyCols']= ', '.join(cols)
@@ -236,8 +178,6 @@ def ADD_CSV():
 ###############
 @app.route('/imputation')
 def Imput():
-    #Copy dataset when refresh page in case of return
-    #Imput.data= get_Data().copy()
     return render_template('files/imputation.html', emptyCols=session['emptyCols'])
 
 @app.route('/add_imput', methods=['POST'])
@@ -269,14 +209,14 @@ def ADD_Imput():
             imp_data= imputData(data)
         else:
             #Remove rows with null values
-            imp_data= data.dropna()
+            imp_data= data.dropna().reset_index().drop('index', axis=1)
         
-        print('ROWS', len(imp_data))
+        #Normalize
+        #norm_data, dframe_vals, dframe_cols= normalizeDf(imp_data)
+        #imp_data= norm_data
+
         if(len(imp_data) < 50):
             return render_template('samples_error.html', samp_count=len(imp_data), typ='imp')
-
-        print('IMP DATA')
-        print(imp_data)
 
         session['Imputation']= imputation
 
@@ -293,8 +233,6 @@ def ADD_Imput():
 ################
 @app.route('/learning')
 def Learning():
-    #Copy dataset when refresh page in case of return
-    #Learning.data= session['Imputed_data']
     return render_template('files/learning.html')
 
 @app.route('/choose_learn', methods=['POST'])
@@ -316,7 +254,6 @@ def Choose_Learning():
 ################
 @app.route('/supfeatures')
 def SupFeats():
-    #Copy dataset when refresh page in case of return
     return render_template('classification/supfeatures.html', variables=session['Imputed_data_cols'])
 
 @app.route('/add_supfeats', methods=['POST'])
@@ -337,7 +274,6 @@ def ADD_SupFeats():
         fe= [int(i) for i in fe]
         if not fe:
             return render_template('form_error.html')
-        #print(fe)
 
         #Concat features columns
         sel_data= pd.DataFrame()
@@ -358,7 +294,7 @@ def ADD_SupFeats():
         dict_obj = sel_data.to_dict('list')
         session['Selected_data']= dict_obj
         session['aux']= session['Selected_data']
-
+        
         return redirect(url_for('Balance'))
 
 ######SUP#######
@@ -366,8 +302,6 @@ def ADD_SupFeats():
 ################
 @app.route('/balance')
 def Balance():
-    #Copy dataset when refresh page in case of return
-    #Balance.data= Selected_Data.copy()
     return render_template('classification/balance.html', samples=zip(session['Samples_count'], range(len(session['Samples_count']))))
 
 @app.route('/add_balance', methods=['POST'])
@@ -394,7 +328,6 @@ def ADD_Balance():
         #Get selected classes
         selected_splits= [splits[i] for i in cl]
         
-        global Selected_Classes
         session['Selected_classes']= ', '.join(str(classes[0]) for classes in selected_splits)
 
         try:
@@ -433,8 +366,6 @@ def ADD_Balance():
 ################
 @app.route('/split')
 def Split():
-    #Copy dataset when refresh page in case of return
-    #Split.data= Selected_Data.copy()
     return render_template('classification/split.html')
 
 @app.route('/add_split', methods=['POST'])
@@ -479,7 +410,7 @@ def ADD_Split():
 
                 #Dictionaries of parameters for GridSearchCV
                 kn_params= {
-                    'n_neighbors' : [5, 20],
+                    'n_neighbors' : [5, 9],
                     'weights': ['uniform', 'distance']
                 }
                 lr_params = {
@@ -490,15 +421,16 @@ def ADD_Split():
                     'gamma': ['scale', 'auto']
                 }
                 mlp_params = {
-                    'hidden_layer_sizes': [(100,), (60,60,60)],
+                    'hidden_layer_sizes': [(100,), (60,60,60), (50,100,50)],
                     'activation': ['logistic', 'tanh', 'relu'], 
-                    'solver': ['sgd', 'adam'], #'lbfgs'
-                    'alpha': [.001, .01],
+                    'solver': ['sgd', 'adam'],
+                    'alpha': [0.0001, .001, .01],#, 0.05],
                     'learning_rate': ['constant', 'adaptive']
                 }
                 dt_params = {
                     'criterion': ['gini', 'entropy'],
-                    'splitter': ['best', 'random']
+                    'splitter': ['best', 'random'],
+                    'max_depth': [10,15,20]
                 }
                 #rf_params = {
                 #    'criterion': ['gini', 'entropy'],
@@ -674,8 +606,6 @@ def ADD_Report():
 ################
 @app.route('/classify')
 def Classify():
-    #Copy dataset when refresh page in case of return
-    #Balance.data= Imputed_Data.copy()
     return render_template('classification/classify.html', feats=session['Selected_feats'], 
                             classes=session['Selected_classes'], model=session['Best_model_name'])
 
@@ -684,12 +614,17 @@ def ADD_Classify():
     if request.method == 'POST':
         #Load file
         fileLoaded= request.files['file']
+        
         #Get file name
         session['Filename']= fileLoaded.filename
         session['Filename']= session['Filename'].replace('.csv', '')
 
+        try:
         #File to csv
-        data= getFile(fileLoaded)
+            data= getFile(fileLoaded)
+        except:
+            return render_template('form_error.html')
+
         #Order columns
         dict_obj= session['Selected_data']
         sel_data= pd.DataFrame(dict_obj)
@@ -704,8 +639,9 @@ def ADD_Classify():
             data= imputData(data)
         else:
             #Remove rows with null values
-            data= data.dropna()
+            data= data.dropna().reset_index().drop('index', axis=1)
         #Normalize
+        #norm_data= data.copy()
         norm_data, dframe_vals, dframe_cols= normalizeDf(data)
 
         #Add new column with the predictions
@@ -730,8 +666,6 @@ def ADD_Classify():
 ################
 @app.route('/results')
 def Results():
-    #Copy dataset when refresh page in case of return
-    #Balance.data= Imputed_Data.copy()
     n_data= pd.DataFrame(session['New_data'])
     return render_template('classification/results.html', table=[n_data.replace(np.nan, '', regex=True).to_html(classes='other', header="true")], 
                                                           model=session['Best_model_name'])
@@ -764,8 +698,6 @@ def ADD_Results():
 ################
 @app.route('/unsupfeatures')
 def UnsupFeats():
-    #Copy dataset when refresh page in case of return
-    #UnsupFeats.data= Imputed_Data.copy()
     imp= pd.DataFrame(session['Imputed_data'])
     return render_template('clustering/unsupfeatures.html', features=list(imp.columns))
 
@@ -891,7 +823,6 @@ def bar_png():
 ################
 @app.route('/pca')
 def PCAnalysis():
-    #Copy dataset when refresh page in case of return
     summ= pd.DataFrame(session['Summary'])
     comp= pd.DataFrame(session['Components'])
     return render_template('clustering/pca.html', summary=[summ.to_html(classes='other', header="true")], #cum_var= Final_Variance,
@@ -949,7 +880,7 @@ def create_pc_plot():
     n= trans.shape[0]
     df= pd.DataFrame(data=comp_data)
     
-    fig, ax = plt.subplots(nrows=session['Sel_components'], ncols=session['Sel_components'], figsize=(session['Sel_components']*4, session['Sel_components']*4))#, constrained_layout=True)
+    fig, ax = plt.subplots(nrows=session['Sel_components'], ncols=session['Sel_components'], figsize=(session['Sel_components']*5, session['Sel_components']*5))#, constrained_layout=True)
     plt.subplots_adjust(hspace=session['Sel_components']*0.075, wspace=session['Sel_components']*0.075, left=0.1, right=0.9, top=0.9, bottom=0.1)
     
     cmap= plt.cm.get_cmap('viridis')
@@ -972,10 +903,10 @@ def create_pc_plot():
             scaley= 1.0/(ys.max()-ys.min())
 
             #fig, ax= plt.subplots(1, 1)
-            ax[i,j].scatter(xs*scalex, ys*scaley, c=data_labeled['cluster'], label=data_labeled['cluster'])
+            ax[i,j].scatter(xs*scalex, ys*scaley, c=data_labeled['cluster'], label=data_labeled['cluster'], alpha=0.5)
             for k in range(n):
                     ax[i,j].arrow(0, 0, trans[k,i], trans[k,j], head_width=0.02, head_length=0.04, color='r', alpha= 0.5)
-                    ax[i,j].text(trans[k,i]*1.15, trans[k,j]*1.15, sel_data.columns[k], color='g', ha='center', va='center')
+                    ax[i,j].text(trans[k,i]*1.15, trans[k,j]*1.15, sel_data.columns[k], color='r', ha='center', va='center')
                     #Remove x, y ticks 
                     ax[i,j].xaxis.set_ticks_position('none') 
                     ax[i,j].yaxis.set_ticks_position('none')
@@ -1002,8 +933,6 @@ def plot_png():
 ################
 @app.route('/cluster_report')
 def ClusterReport():
-    #Copy dataset when refresh page in case of return
-    #Balance.data= Imputed_Data.copy()
     n_data= pd.DataFrame(session['New_data'])
     return render_template('clustering/cluster_report.html', data=[n_data.replace(np.nan, '', regex=True).to_html(classes='other', header="true")],
                                                              no_components=session['Sel_components'], no_clusters=session['No_clusters'])
@@ -1016,14 +945,12 @@ if __name__ == '__main__':
     #app.run(port = 3000, debug = True, use_reloader = True, threaded=True)
 
 """
-@app.route('/balance')
-def Balance():
-    #Copy dataset when refresh page in case of return
-    Balance.data= Imputed_Data.copy()
-    return render_template('balance.html')
+@app.route('/route')
+def Name():
+    return render_template('template.html')
 
-@app.route('/add_supfeats', methods=['POST'])
-def ADD_SupFeats():
+@app.route('/work_route', methods=['POST'])
+def Work_Function():
     if request.method == 'POST':
-        return redirect(url_for('Balance'))
+        return redirect(url_for('Next_Function_Name'))
 """

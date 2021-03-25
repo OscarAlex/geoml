@@ -18,14 +18,14 @@
             number while losing as little information as possible. The 
             following {{ no_components }} principal components were generated:</p>
             
-        <center><br>Component loadings
+        <center><br><b>Component loadings</b>
         <div style="width:90vw; height:62.5vh; overflow:auto; font-size: 15px;">
         {% for comp in components: %}
             {{ comp|safe }}
         {% endfor %}
         </div>
         
-        <br>Summary
+        <br><b>Summary</b>
         <div style="width:60vw; height:62.5vh; overflow:auto; font-size: 15px;">
             {% for sum in summary: %}
                 {{ sum|safe }}
@@ -36,8 +36,9 @@
         <br>You can see the explained variance of each component in this bar graph.
         
         <br><br>
-        <img src="/bar.png" alt="my plot" width="600vw">
-        
+        <div style="width:90vw; height:78vh; overflow:auto;">
+            <img src="/bar.png" alt="my plot" width="600vw">
+        </div>
         <br><br><br>
         <p class="question">Select the number of principal components to use:</p>
         <form action="/add_pca" method= "POST">
